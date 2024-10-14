@@ -130,8 +130,6 @@ const KPIsSchema = mongoose.Schema({
     },
   },
   greenhouse_gas_indicators:{
-    code:String,
-    unit: String,
     total_scope_1:{
       value:Number,
       reviews:[{
