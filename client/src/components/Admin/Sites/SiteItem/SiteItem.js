@@ -20,6 +20,7 @@ import {
   isAdmin,
   isMaster,
 } from "../../../../utils/checkPermission";
+import { useLanguage } from "../../../../contexts";
 
 const siteController = new Site();
 const permissionController = new Permission();
@@ -43,6 +44,10 @@ export function SiteItem(props) {
   const onOpenCloseModal = () => setShowModal((prevState) => !prevState);
   const onOpenCloseConfirm = () => setShowConfirm((prevState) => !prevState);
 
+    const { translations } = useLanguage();
+  
+    const t = (key) => translations[key] || key; // Función para obtener la traducción
+
   useEffect(() => {
     (async () => {
       try {
@@ -63,7 +68,7 @@ export function SiteItem(props) {
   }, [role]);
 
   const openUpdateSite = () => {
-    setTitleModal(`Actualizar ${site.name ? site.name : ""}`);
+    setTitleModal(`${t("update")} ${site.name ? site.name : ""}`);
     onOpenCloseModal();
   };
 
@@ -71,8 +76,8 @@ export function SiteItem(props) {
     setIsDelete(false);
     setConfirmMessage(
       site.active
-        ? `¿Está seguro que desea desactivar "${site.name ? site.name : ""}"?`
-        : `¿Está seguro que desea activar "${site.name ? site.name : ""}"?`
+        ? `${t("question_inactive")} "${site.name ? site.name : ""}"?`
+        : `${t("question_active")} "${site.name ? site.name : ""}"?`
     );
     onOpenCloseConfirm();
   };
@@ -91,7 +96,7 @@ export function SiteItem(props) {
 
   const openDeleteConfirm = () => {
     setIsDelete(true);
-    setConfirmMessage(`¿Está seguro que desea eliminar "${site.name ? site.name : ""}"?`);
+    setConfirmMessage(`${t("are_you_sure_you_want_to_remove")} "${site.name ? site.name : ""}"?`);
     onOpenCloseConfirm();
   };
 
@@ -146,8 +151,8 @@ export function SiteItem(props) {
         onConfirm={isDelete ? onDelete : onActivateDesactivate}
         content={confirmMessage}
         size="tiny"
-        cancelButton='Cancelar'
-        confirmButton="Aceptar"
+        cancelButton={t("cancel")}
+        confirmButton={t("accept")}
       />
     </>
   );

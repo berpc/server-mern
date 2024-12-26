@@ -35,7 +35,7 @@ export function PermissionItem(props) {
     user: { role },
   } = useAuth();
 
-  const { language, changeLanguage, translations } = useLanguage();
+  const { translations } = useLanguage();
   
   const t = (key) => translations[key] || key ; // Función para obtener la traducción
 
@@ -99,7 +99,7 @@ export function PermissionItem(props) {
 
   const openDeleteConfirm = () => {
     setIsDelete(true);
-    setConfirmMessage(`¿Está seguro que desea eliminar el permiso "${permission.role.name} / ${t(permission.module)} / ${t(permission.action)}"?`);
+    setConfirmMessage(`${t("are_you_sure_you_want_to_remove_the_permission")} "${permission.role.name} / ${t(permission.module)} / ${t(permission.action)}"?`);
     onOpenCloseConfirm();
   };
 

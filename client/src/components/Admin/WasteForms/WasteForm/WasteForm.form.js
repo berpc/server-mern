@@ -15,7 +15,7 @@ export function initialValues(form, period, year) {
       unit:unitValue,
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     plastic_sent_to_recycle_or_reuse: form?.plastic_sent_to_recycle_or_reuse || {
       code:wasteCodes["plastic_sent_to_recycle_or_reuse"],
@@ -23,7 +23,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     fabric_sent_to_recycle_or_reuse:form?.fabric_sent_to_recycle_or_reuse || {
       code:wasteCodes["fabric_sent_to_recycle_or_reuse"],
@@ -31,7 +31,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     metal_sent_to_recycle_or_reuse:form?.metal_sent_to_recycle_or_reuse || {
       code:wasteCodes["metal_sent_to_recycle_or_reuse"],
@@ -39,7 +39,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     wood_sent_to_recycle_or_reuse:form?.wood_sent_to_recycle_or_reuse || {
       code:wasteCodes["wood_sent_to_recycle_or_reuse"],
@@ -47,7 +47,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     other_general_waste_sent_to_recycle_or_reuse:form?.other_general_waste_sent_to_recycle_or_reuse || {
       code:wasteCodes["other_general_waste_sent_to_recycle_or_reuse"],
@@ -55,7 +55,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     leathers_sent_to_recycle_or_reuse:form?.leathers_sent_to_recycle_or_reuse || {
       code:wasteCodes["leathers_sent_to_recycle_or_reuse"],
@@ -63,7 +63,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     rubber_sent_to_recycle_or_reuse:form?.rubber_sent_to_recycle_or_reuse || {
       code:wasteCodes["rubber_sent_to_recycle_or_reuse"],
@@ -71,7 +71,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     food_scraps_sent_to_recycle_or_reuse:form?.food_scraps_sent_to_recycle_or_reuse || {
       code:wasteCodes["food_scraps_sent_to_recycle_or_reuse"],
@@ -79,7 +79,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     paper_and_cardboard_sent_to_incineration:form?.paper_and_cardboard_sent_to_incineration || {
       code:wasteCodes["paper_and_cardboard_sent_to_incineration"],
@@ -87,7 +87,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     plastic_sent_to_incineration:form?.plastic_sent_to_incineration || {
       code:wasteCodes["plastic_sent_to_incineration"],
@@ -95,7 +95,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     fabric_sent_to_incineration:form?.fabric_sent_to_incineration || {
       code:wasteCodes["fabric_sent_to_incineration"],
@@ -103,7 +103,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     metal_sent_to_incineration:form?.metal_sent_to_incineration || {
       code:wasteCodes["metal_sent_to_incineration"],
@@ -111,7 +111,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     wood_sent_to_incineration:form?.wood_sent_to_incineration || {
       code:wasteCodes["wood_sent_to_incineration"],
@@ -119,7 +119,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     other_general_waste_sent_to_incineration:form?.other_general_waste_sent_to_incineration || {
       code:wasteCodes["other_general_waste_sent_to_incineration"],
@@ -127,7 +127,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     other_general_waste_sent_to_other_types_of_disposal:form?.other_general_waste_sent_to_other_types_of_disposal || {
       code:wasteCodes["other_general_waste_sent_to_other_types_of_disposal"],
@@ -135,7 +135,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     total_sent_to_landfill:form?.total_sent_to_landfill || {
       code:wasteCodes["total_sent_to_landfill"],
@@ -143,7 +143,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     total_sent_for_reuse_or_recycling:form?.total_sent_for_reuse_or_recycling || {
       code:wasteCodes["total_sent_for_reuse_or_recycling"],
@@ -151,7 +151,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     total_sent_to_incineration:form?.total_sent_to_incineration || {
       code:wasteCodes["total_sent_to_incineration"],
@@ -159,7 +159,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     
     total_general_waste_sent_to_other_types_of_disposal:form?.total_general_waste_sent_to_other_types_of_disposal || {
@@ -168,7 +168,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     total_non_hazardous_waste_unit_produced:form?.total_non_hazardous_waste_unit_produced || {
       code:wasteCodes["total_non_hazardous_waste_unit_produced"],
@@ -176,7 +176,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
   };
 }

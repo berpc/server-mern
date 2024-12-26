@@ -11,7 +11,7 @@ import {
   TableCell,
   TableHeader,
   TableHeaderCell,
-  TableRow
+  TableRow,
 } from "semantic-ui-react";
 import { BasicModal } from "../../../components/Shared";
 import { ListKPIsForms, KPIsForm } from "../../../components/Admin/KPIsForms";
@@ -27,6 +27,7 @@ import {
   isMaster,
 } from "../../../utils/checkPermission";
 import "./KPIsForms.scss";
+import { useLanguage } from "../../../contexts";
 
 const siteController = new Site();
 
@@ -46,6 +47,10 @@ export function KPIsForms() {
   const onReload = () => setReload((prevState) => !prevState);
 
   const location = useLocation();
+
+  const { language, changeLanguage, translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
 
   useEffect(() => {
     (async () => {
@@ -86,6 +91,7 @@ export function KPIsForms() {
             <SelectedListSites
               sitesFilter={sitesFilter}
               handleSelected={handleSelected}
+              t={t}
             />
           ) : !site && siteSelected !== null ? (
             <ListKPIsForms
@@ -112,14 +118,14 @@ export function KPIsForms() {
       <div className="kpis-forms-page">
         <Segment textAlign="center">
           {" "}
-          <Header as="h1">KPIs</Header>
+          <Header as="h1">{t("KPIs")}</Header>
         </Segment>
         <div className="kpis-forms-page__add">
           {siteSelected !== null || site ? (
             //      <Link to={"/admin/kpisforms/newkpisform"} state= {{siteSelected: encrypt(siteSelected) }}
             // >
             <Button primary onClick={onOpenCloseModal}>
-              <Icon name="plus" /> Nuevo Formulario KPIs
+              <Icon name="plus" /> {t("new_kpis_form")}
             </Button>
           ) : // </Link>
           null}
@@ -131,7 +137,7 @@ export function KPIsForms() {
       <BasicModal
         show={showModal}
         close={onOpenCloseModal}
-        title="Formulario Energia"
+        title={t("kpis_form")}
         size={"fullscreen"}
       >
         <KPIsForm
@@ -146,7 +152,7 @@ export function KPIsForms() {
 }
 
 function SelectedListSites(props) {
-  const { sitesFilter, role, permissionByRole, handleSelected } = props;
+  const { sitesFilter, role, permissionByRole, handleSelected, t } = props;
 
   return (
     <div>
@@ -165,16 +171,14 @@ function SelectedListSites(props) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHeaderCell>Razon Social</TableHeaderCell>
-              <TableHeaderCell>Email</TableHeaderCell>
-              <TableHeaderCell>Acciones</TableHeaderCell>
+              <Table.HeaderCell>{t("company_name")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("email")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("actions")}</Table.HeaderCell>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sitesFilter.map((site) => (
-              <TableRow 
-              key={site._id}
-              >
+              <TableRow key={site._id}>
                 <TableCell>{site.name ? site.name : ""}</TableCell>
                 <TableCell>{site.email}</TableCell>
                 <TableCell>

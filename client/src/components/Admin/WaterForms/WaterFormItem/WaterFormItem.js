@@ -12,6 +12,7 @@ import {
 } from "../../../../utils/checkPermission";
 import { formatDateHourCompleted, formatDateView } from "../../../../utils/formatDate";
 import "./WaterFormItem.scss";
+import { useLanguage } from "../../../../contexts";
 
 const waterFormController = new Waterform();
 const permissionController = new Permission();
@@ -27,6 +28,10 @@ export function WaterFormItem(props) {
   const onOpenCloseConfirm = () => setShowConfirm((prevState) => !prevState);
 
   const [permissionsByRole, setPermissionsByRole] = useState([]);
+
+    const { translations } = useLanguage();
+  
+    const t = (key) => translations[key] || key; // Función para obtener la traducción
 
   useEffect(() => {
     (async () => {
@@ -48,7 +53,7 @@ export function WaterFormItem(props) {
   }, [role]);
 
   const openUpdateSite = () => {
-    setTitleModal(`Actualizar Formulario de Agua`);
+    setTitleModal(`${t("update")} ${t("water_form")}`);
     onOpenCloseModal();
   };
 
@@ -120,7 +125,7 @@ export function WaterFormItem(props) {
         open={showConfirm}
         onCancel={onOpenCloseConfirm}
         onConfirm={onDelete}
-        content={`Eliminar el formulario de agua con fecha ${formatDateView(waterForm.date)}`}
+        content={`${t("delete_water_form_with_date")} ${formatDateView(waterForm.date)}`}
         size="mini"
       />
     </>

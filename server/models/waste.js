@@ -32,7 +32,8 @@ const WasteSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   plastic_sent_to_recycle_or_reuse:{
     code:String,
@@ -47,7 +48,8 @@ const WasteSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   fabric_sent_to_recycle_or_reuse:{
     code:String,
@@ -62,7 +64,8 @@ const WasteSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   metal_sent_to_recycle_or_reuse:{
     code:String,
@@ -77,7 +80,8 @@ const WasteSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   wood_sent_to_recycle_or_reuse:{
     code:String,
@@ -92,7 +96,8 @@ const WasteSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   other_general_waste_sent_to_recycle_or_reuse:{
     code:String,
@@ -107,7 +112,8 @@ const WasteSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
  leathers_sent_to_recycle_or_reuse:{
   code:String,
@@ -122,7 +128,8 @@ const WasteSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   rubber_sent_to_recycle_or_reuse:{
     code:String,
@@ -137,7 +144,8 @@ const WasteSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   food_scraps_sent_to_recycle_or_reuse:{
     code:String,
@@ -152,7 +160,8 @@ const WasteSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   paper_and_cardboard_sent_to_incineration:{
     code:String,
@@ -167,7 +176,8 @@ const WasteSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   plastic_sent_to_incineration:{
     code:String,
@@ -182,7 +192,8 @@ const WasteSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   fabric_sent_to_incineration:{
     code:String,
@@ -197,7 +208,8 @@ const WasteSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   metal_sent_to_incineration:{
     code:String,
@@ -212,7 +224,8 @@ const WasteSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   wood_sent_to_incineration:{
     code:String,
@@ -227,7 +240,8 @@ const WasteSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   other_general_waste_sent_to_incineration:{
     code:String,
@@ -242,7 +256,8 @@ const WasteSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   other_general_waste_sent_to_other_types_of_disposal:{
     code:String,
@@ -257,7 +272,8 @@ const WasteSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   total_sent_to_landfill:{
     code:String,
@@ -272,7 +288,8 @@ const WasteSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   total_sent_for_reuse_or_recycling:{
     code:String,
@@ -287,7 +304,8 @@ const WasteSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   total_sent_to_incineration:{
     code:String,
@@ -302,7 +320,8 @@ const WasteSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   total_general_waste_sent_to_other_types_of_disposal:{
     code:String,
@@ -317,7 +336,8 @@ const WasteSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   total_non_hazardous_waste_unit_produced:{
     code:String,
@@ -332,7 +352,8 @@ const WasteSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   active:Boolean
 });

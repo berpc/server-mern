@@ -23,6 +23,7 @@ import { formatDateView } from "../../utils/formatDate";
 import { useNavigate } from "react-router-dom";
 import moment from "moment";
 import "moment/locale/es"; //importo el lenguaje en español
+import "moment/locale/pt-br";
 import { useLanguage } from "../../contexts";
 //import "moment/locale/en";
 //import "moment/locale/fr";
@@ -42,8 +43,15 @@ export function AdminLayout(props) {
 
   const onOpenCloseModal = () => setShowModal((prevState) => !prevState);
 
+  const { language, translations } = useLanguage(); //deberia mantener el estado del idioma crear otro contexto
+  //const [language, setLanguage] = useState("Español");
+
+  moment.locale(language === "pt" ? "pt-br" : language);
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
+
   const openUpdateUser = () => {
-    setTitleModal(`Actualizar ${user.email}`);
+    setTitleModal(`${t("update")} ${user.email}`);
     onOpenCloseModal();
   };
 
@@ -63,14 +71,14 @@ export function AdminLayout(props) {
       </div>
       <div className="admin-layout__right">
         <div className="admin-layout__right-pre">
-        <div className="admin-layout__right_date">
+          <div className="admin-layout__right_date">
             {moment().format("LLLL")}
           </div>
         </div>
         <div className="admin-layout__right-header">
           {/* <SiteSelector /> */}
           <LanguageSelector />
-          <Profile updateUser={openUpdateUser} />
+          <Profile updateUser={openUpdateUser} t={t} />
           <Label size="large" basic>
             <IconUI name="user" /> {user.email}
           </Label>
@@ -154,13 +162,15 @@ export default SiteSelector;
 
 function LanguageSelector(props) {
   const [listLanguages, setListLanguages] = useState([]);
-  const { language, changeLanguage } = useLanguage();//deberia mantener el estado del idioma crear otro contexto
+  const { language, changeLanguage, translations } = useLanguage(); //deberia mantener el estado del idioma crear otro contexto
   //const [language, setLanguage] = useState("Español");
 
   const handleChange = (event, data) => {
     changeLanguage(data.value);
   };
   const { accessToken } = useAuth();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
 
   useEffect(() => {
     (async () => {
@@ -170,7 +180,11 @@ function LanguageSelector(props) {
       // } else {
       //   setListLanguages([]);
       // }
-      setListLanguages([{key:"es", value:"Español"}, {key:"en", value:"Ingles"}, {key:"fr", value:"Frances"}]);
+      setListLanguages([
+        { key: "es", value: "Español" },
+        { key: "en", value: "Ingles" },
+        { key: "pt", value: "Portugues" },
+      ]);
     })();
   }, []);
 
@@ -203,7 +217,7 @@ function LanguageSelector(props) {
 }
 
 function Profile(props) {
-  const { updateUser } = props;
+  const { updateUser, t } = props;
   const { logout } = useAuth();
   const navigate = useNavigate();
 
@@ -239,14 +253,14 @@ function Profile(props) {
             onClick={() => {
               updateUser();
             }}
-            text="Editar perfil"
+            text={t("edit_profile")}
           />
           <DropdownItem
             icon="power off"
             onClick={() => {
               onOpenCloseConfirm();
             }}
-            text="Cerrar sesión"
+            text={t("logout")}
           />
         </DropdownMenu>
       </Dropdown>
@@ -254,9 +268,10 @@ function Profile(props) {
         open={showConfirm}
         onConfirm={handleLogout}
         onCancel={onOpenCloseConfirm}
-        cancelButton={"Cancelar"}
-        confirmButton={"Aceptar"}
-        content={`¿Está seguro que desea cerrar sesión?`}
+        header={t("logout")}
+        cancelButton={t("cancel")}
+        confirmButton={t("accept")}
+        content={`${t("are_you_sure_you_want_to_log_out")}`}
         size="mini"
       />
     </div>

@@ -8,7 +8,17 @@ const WaterSchema = mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   },
-  state: String,
+  period:String,
+    year:String,
+    state: String,
+    // company:{
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: 'Company'
+    // },
+    site:{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Site'
+    },
   company:{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Company'
@@ -21,6 +31,7 @@ const WaterSchema = mongoose.Schema({
     },
     comments:String,
     state:String,
+    
   }],
   municipal_network_water:{
     code:String,
@@ -35,7 +46,8 @@ const WaterSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   cost_of_water_from_the_municipal_network:{
     code:String,
@@ -50,7 +62,8 @@ const WaterSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   rainwater_harvesting:{
     code:String,
@@ -65,7 +78,8 @@ const WaterSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   groundwater:{
     code:String,
@@ -80,7 +94,8 @@ const WaterSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   surface_water:{
     code:String,
@@ -95,7 +110,8 @@ const WaterSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   percentage_network_water:{
     code:String,
@@ -110,7 +126,8 @@ const WaterSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   percentage_surface_water:{
     code:String,
@@ -125,7 +142,8 @@ const WaterSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   percentage_groundwater:{
     code:String,
@@ -140,7 +158,8 @@ const WaterSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   total_water_consumed_per_unit_produced:{
     code:String,
@@ -155,7 +174,8 @@ const WaterSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   
   active:Boolean

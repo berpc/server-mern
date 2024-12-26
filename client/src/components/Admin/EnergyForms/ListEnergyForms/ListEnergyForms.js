@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { Loader, Pagination, Table, Grid, GridColumn, Input, Divider, Confirm, Dropdown, Label } from "semantic-ui-react";
+import {
+  Loader,
+  Pagination,
+  Table,
+  Grid,
+  GridColumn,
+  Input,
+  Divider,
+  Confirm,
+  Dropdown,
+  Label,
+} from "semantic-ui-react";
 import { size, map } from "lodash";
 import { Energyform } from "../../../../api";
 import { useAuth } from "../../../../hooks";
@@ -11,50 +22,51 @@ import {
 } from "../../../../utils/checkPermission";
 import "./ListEnergyForms.scss";
 import { formatDateView } from "../../../../utils/formatDate";
-import { convertEnergyFieldsEngToEsp, convertPeriodsEngToEsp } from "../../../../utils/converts";
 import { EnergyForm } from "../EnergyForm";
 import { PERIODS } from "../../../../utils";
 import { BasicModal } from "../../../Shared";
 import { energyCodes } from "../../../../utils/codes";
+import { useLanguage } from "../../../../contexts";
 const _ = require("lodash");
-
 
 const energyFormController = new Energyform();
 
 export function ListEnergyForms(props) {
-  const { reload, onReload , siteSelected, yearSelected} = props;
+  const { reload, onReload, siteSelected, yearSelected } = props;
   const [energyforms, setEnergyForms] = useState([]);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState();
-    // const [Role, setRole] = useState(null);
-    const {
-      user: { role, site },
-      accessToken,
-    } = useAuth();
-  
+  // const [Role, setRole] = useState(null);
+  const {
+    user: { role, site },
+    accessToken,
+  } = useAuth();
 
-    useEffect(() => {
-      (async () => {
-        if(yearSelected!=="" && siteSelected!==undefined)
+  const { translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
+
+  useEffect(() => {
+    (async () => {
+      if (yearSelected !== "" && siteSelected !== undefined)
         try {
-          const response = await energyFormController.getEnergyFormsBySiteAndYear(
-            accessToken,
-            siteSelected,
-            yearSelected
-          );
-          console.log(response)
-          if (response.code ===200) {
+          const response =
+            await energyFormController.getEnergyFormsBySiteAndYear(
+              accessToken,
+              siteSelected,
+              yearSelected
+            );
+          console.log(response);
+          if (response.code === 200) {
             setEnergyForms(response.energyForms);
           } else {
             setEnergyForms([]);
           }
-  
         } catch (error) {
           console.error(error);
         }
-      })();
-    }, [yearSelected,siteSelected, reload]);
-  
+    })();
+  }, [yearSelected, siteSelected, reload]);
 
   const changePage = (_, data) => {
     setPage(data.activePage);
@@ -65,21 +77,20 @@ export function ListEnergyForms(props) {
 
   return (
     <div className="list-energy-forms">
-     <TablePeriods
+      <TablePeriods
         data={energyforms}
         onReload={onReload}
         accessToken={accessToken}
         year={yearSelected}
         site={siteSelected}
+        t={t}
       />
     </div>
   );
 }
 
-
 function TablePeriods(props) {
-
-  const { data, onReload, accessToken , year, site} = props;
+  const { data, onReload, accessToken, year, site, t } = props;
 
   const [showModal, setShowModal] = useState(false);
   const [titleModal, setTitleModal] = useState("");
@@ -88,8 +99,7 @@ function TablePeriods(props) {
   const [dataDeleted, setDataDelete] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const handleConfirm = (e) => setDataDelete(e)
-
+  const handleConfirm = (e) => setDataDelete(e);
 
   // Estado para controlar el modal
   const [selectedPeriod, setSelectedPeriod] = useState(null);
@@ -108,11 +118,9 @@ function TablePeriods(props) {
   const handleDeleteModal = (period) => {
     const form = data.find((item) => item.period === period);
     setConfirmContent(
-      `Eliminar el formulario de Energia con fecha ${formatDateView(
-        form.date
-      )}`
+      `${t("delete_dated_energy_form")} ${formatDateView(form.date)}`
     );
-    setDataDelete(form)
+    setDataDelete(form);
     onOpenCloseConfirm();
   };
 
@@ -120,9 +128,7 @@ function TablePeriods(props) {
     //setFieldName(name);
     const form = data.find((item) => item.period === period);
     setTitleModal(
-      `Actualizar formulario energia: ${convertPeriodsEngToEsp(form.period)}-${
-        form.year
-      }`
+      `${t("update")} ${t("energy_form")}: ${t(form.period)}-${form.year}`
     );
     setModalContent(
       <EnergyForm
@@ -136,9 +142,15 @@ function TablePeriods(props) {
   };
 
   const openNewEnergyForm = (period) => {
-    setTitleModal(`Nuevo Formulario energia`);
+    setTitleModal(t("new_energy_form"));
     setModalContent(
-      <EnergyForm onClose={onOpenCloseModal} onReload={onReload} period={period} year={year} siteSelected={site}/>
+      <EnergyForm
+        onClose={onOpenCloseModal}
+        onReload={onReload}
+        period={period}
+        year={year}
+        siteSelected={site}
+      />
     );
     setShowModal(true);
   };
@@ -206,15 +218,14 @@ function TablePeriods(props) {
         "gasoline_for_internal_vehicles",
         "gasoline_cost_of_internal_vehicles",
         "biomass",
-        "biomass_cost"
-
+        "biomass_cost",
       ],
     };
     return field;
   };
 
-    // Obtener todos los campos únicos
-    const uniqueFields = fieldsFinal();
+  // Obtener todos los campos únicos
+  const uniqueFields = fieldsFinal();
 
   const mainFields = ["electricity", "fuels"];
 
@@ -231,22 +242,22 @@ function TablePeriods(props) {
         <Table.Header>
           <Table.Row>
             <Table.HeaderCell rowSpan="2" textAlign="center">
-              Codigo
+              {t("code")}
             </Table.HeaderCell>
             <Table.HeaderCell rowSpan="2" textAlign="center">
-            Concepto
+              {t("concept")}
             </Table.HeaderCell>
             <Table.HeaderCell rowSpan="2" textAlign="center">
-              Unidades
+              {t("units")}
             </Table.HeaderCell>
             <Table.HeaderCell colSpan="14" textAlign="center">
-              PERIODO DE REPORTE {year}
+              {t("report_period")} {year}
             </Table.HeaderCell>
           </Table.Row>
           <Table.Row>
             {periods.map((period, index) => (
               <Table.HeaderCell key={index}>
-                {convertPeriodsEngToEsp(period)}
+                {t(period)}
                 {hasDataPeriod(period) ? (
                   <>
                     <Dropdown
@@ -258,12 +269,12 @@ function TablePeriods(props) {
                     >
                       <Dropdown.Menu>
                         <Dropdown.Item
-                          text="Editar"
+                          text={t("edit")}
                           icon="edit"
                           onClick={() => openUpdateEffluentForm(period)}
                         />
                         <Dropdown.Item
-                          text="Eliminar"
+                          text={t("delete")}
                           icon="trash"
                           onClick={() => handleDeleteModal(period)}
                         />
@@ -282,7 +293,7 @@ function TablePeriods(props) {
                     >
                       <Dropdown.Menu>
                         <Dropdown.Item
-                          text="Cargar datos"
+                          text={t("load_data")}
                           icon="plus"
                           onClick={() => openNewEnergyForm(period)}
                         />
@@ -292,8 +303,8 @@ function TablePeriods(props) {
                 )}
               </Table.HeaderCell>
             ))}
-            <Table.HeaderCell>Total</Table.HeaderCell>
-            <Table.HeaderCell>Promedio</Table.HeaderCell>
+            <Table.HeaderCell>{t("total")}</Table.HeaderCell>
+            <Table.HeaderCell>{t("average")}</Table.HeaderCell>
           </Table.Row>
         </Table.Header>
         <Table.Body>
@@ -303,7 +314,7 @@ function TablePeriods(props) {
                 <Table.Row>
                   <Table.Cell collapsing width={18}>
                     {" "}
-                    <Label ribbon>{convertEnergyFieldsEngToEsp(f)}</Label>
+                    <Label ribbon>{t(f)}</Label>
                   </Table.Cell>
                 </Table.Row>
               </React.Fragment>
@@ -313,6 +324,7 @@ function TablePeriods(props) {
                 data={data}
                 calculateTotalAndAverage={calculateTotalAndAverage}
                 periods={periods}
+                t={t}
               />
             </>
           ))}
@@ -358,30 +370,32 @@ function TablePeriods(props) {
         onConfirm={onDelete}
         content={confirmContent}
         size="tiny"
-        cancelButton="Cancelar"
-        confirmButton="Aceptar"
+        cancelButton={t("cancel")}
+        confirmButton={t("accept")}
+        header={t("delete")}
       />
     </>
   );
 }
 
 function SubFields(props) {
-  const { f, listFields, periods, data, calculateTotalAndAverage } = props;
-  console.log(data)
+  const { f, listFields, periods, data, calculateTotalAndAverage, t } = props;
 
   return listFields[f].map((field) => {
     return (
       <React.Fragment key={field}>
         <Table.Row>
           <Table.Cell>{energyCodes[field]}</Table.Cell>
-          <Table.Cell>{convertEnergyFieldsEngToEsp(field)}</Table.Cell>
+          <Table.Cell>{t(field)}</Table.Cell>
           <Table.Cell>{"-"}</Table.Cell>
           {periods.map((period) => {
             const item = data.find((d) => d.period === period);
             return (
               <Table.Cell key={`${field}-${period}`}>
                 {item && item[f][field] ? item[f][field].value : "-"}
-                {console.log(    item && item[f][field] ? item[f][field].value : "-")}
+                {console.log(
+                  item && item[f][field] ? item[f][field].value : "-"
+                )}
               </Table.Cell>
             );
           })}

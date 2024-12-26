@@ -11,7 +11,11 @@ import {
   isMaster,
 } from "../../../../utils/checkPermission";
 import "./SiteFormItem.scss";
-import { formatDateHourCompleted, formatDateView } from "../../../../utils/formatDate";
+import {
+  formatDateHourCompleted,
+  formatDateView,
+} from "../../../../utils/formatDate";
+import { useLanguage } from "../../../../contexts";
 
 const siteFormController = new Siteform();
 const permissionController = new Permission();
@@ -21,12 +25,19 @@ export function SiteFormItem(props) {
   const [showModal, setShowModal] = useState(false);
   const [titleModal, setTitleModal] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
-  const { accessToken  , user: { role }, } = useAuth();
+  const {
+    accessToken,
+    user: { role },
+  } = useAuth();
 
   const onOpenCloseModal = () => setShowModal((prevState) => !prevState);
   const onOpenCloseConfirm = () => setShowConfirm((prevState) => !prevState);
 
   const [permissionsByRole, setPermissionsByRole] = useState([]);
+
+  const { translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
 
   useEffect(() => {
     (async () => {
@@ -48,7 +59,7 @@ export function SiteFormItem(props) {
   }, [role]);
 
   const openUpdateSite = () => {
-    setTitleModal(`Actualizar Formulario de Sitio`);
+    setTitleModal(`t("update") Formulario de Sitio`);
     onOpenCloseModal();
   };
 
@@ -64,16 +75,19 @@ export function SiteFormItem(props) {
 
   return (
     <>
-
-        <Table.Row key={siteForm._id}>
+      <Table.Row key={siteForm._id}>
         <Table.Cell>
           <Icon color={siteForm.active ? "green" : "red"} name="circle" />
         </Table.Cell>
         <Table.Cell>{formatDateView(siteForm.date)}</Table.Cell>
         <Table.Cell>
-          {siteForm.creator_user? 
-          siteForm.creator_user.lastname? siteForm.creator_user.lastname + " " + siteForm.creator_user.firstname
-          : siteForm.creator_user.email : null}
+          {siteForm.creator_user
+            ? siteForm.creator_user.lastname
+              ? siteForm.creator_user.lastname +
+                " " +
+                siteForm.creator_user.firstname
+              : siteForm.creator_user.email
+            : null}
         </Table.Cell>
         <Table.Cell>
           {isMaster(role) ||
@@ -97,7 +111,7 @@ export function SiteFormItem(props) {
           ) : null}
         </Table.Cell>
       </Table.Row>
-          {/* <Button icon as="a" href={siteForm.url} target="_blank">
+      {/* <Button icon as="a" href={siteForm.url} target="_blank">
             <Icon name="eye" />
           </Button>
           <Button icon primary onClick={openUpdateSite}>
@@ -107,7 +121,12 @@ export function SiteFormItem(props) {
             <Icon name="trash" />
           </Button> */}
 
-      <BasicModal show={showModal} close={onOpenCloseModal} title={titleModal} size={'fullscreen'}>
+      <BasicModal
+        show={showModal}
+        close={onOpenCloseModal}
+        title={titleModal}
+        size={"fullscreen"}
+      >
         <SiteForm
           onClose={onOpenCloseModal}
           onReload={onReload}
@@ -119,10 +138,12 @@ export function SiteFormItem(props) {
         open={showConfirm}
         onCancel={onOpenCloseConfirm}
         onConfirm={onDelete}
-        content={`Eliminar el formulario del sitio con fecha ${formatDateView(siteForm.date)}`}
+        content={`${t("delete_site_form_with_date")} ${formatDateView(
+          siteForm.date
+        )}`}
         size="tiny"
-        cancelButton='Cancelar'
-        confirmButton="Aceptar"
+        cancelButton={t("cancel")}
+        confirmButton={t("accept")}
       />
     </>
   );

@@ -22,7 +22,7 @@ export function PermissionForm(props) {
   const [listActionPermissions, setListActionPermissions] = useState([]);
   const [listActions, setListActions] = useState([]);
 
-  const { language, changeLanguage, translations } = useLanguage();
+  const { translations } = useLanguage();
   
   const t = (key) => translations[key.toLowerCase()] || key ; // Función para obtener la traducción
 
@@ -93,7 +93,7 @@ export function PermissionForm(props) {
     <Form className="permission-form" onSubmit={formik.handleSubmit}>
       <Form.Group widths="equal">
         <Form.Dropdown
-          label={t("rol")}
+          label={t("role")}
           //placeholder="Selecciona un rol"
           options={listRoles.map((ds) => {
             return {
@@ -125,7 +125,7 @@ export function PermissionForm(props) {
           error={formik.errors.module}
         />
         <Form.Dropdown
-          label="Acción"
+          label={t("action")}
           placeholder={
             listActions && listActions.length > 0
               ? "Selecciona una acción"

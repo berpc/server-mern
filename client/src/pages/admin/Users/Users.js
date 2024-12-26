@@ -7,6 +7,7 @@ import { useAuth } from "../../../hooks";
 import { isAdmin, hasPermission, isMaster } from "../../../utils/checkPermission";
 import { ErrorAccessDenied } from "../Error";
 import { Permission } from "../../../api";
+import { useLanguage } from "../../../contexts";
 
 const permissionController = new Permission();
 export function Users() {
@@ -20,6 +21,10 @@ export function Users() {
   const [permissionsByRole, setPermissionsByRole] = useState([]);
   const onOpenCloseModal = () => setShowModal((prevState) => !prevState);
   const onReload = () => setReload((prevState) => !prevState);
+
+  const { language, changeLanguage, translations } = useLanguage();
+  
+  const t = (key) => translations[key] || key ; // Función para obtener la traducción
 
   useEffect(() => {
     (async () => {
@@ -42,7 +47,7 @@ export function Users() {
 
   const panes = [
     {
-      menuItem: "Usuarios activos",
+      menuItem: t("active_users"),
       render: () => (
         <Tab.Pane attached={false}>
           <ListUsers usersActive={true} reload={reload} onReload={onReload} />
@@ -50,7 +55,7 @@ export function Users() {
       ),
     },
     {
-      menuItem: "Usuarios inactivos",
+      menuItem: t("inactive_users"),
       render: () => (
         <Tab.Pane attached={false}>
           <ListUsers usersActive={false} reload={reload} onReload={onReload} />
@@ -74,7 +79,7 @@ export function Users() {
               primary
               onClick={onOpenCloseModal}
             >
-              Nuevo usuario
+             {t("new_user")}
             </Button>
           ) : null}
           <Tab menu={{ secondary: true }} panes={panes} />
@@ -83,7 +88,7 @@ export function Users() {
         <BasicModal
           show={showModal}
           close={onOpenCloseModal}
-          title="Crear nuevo usuario"
+          title={t("create_new_user")}
         >
           <UserForm close={onOpenCloseModal} onReload={onReload} />
         </BasicModal>

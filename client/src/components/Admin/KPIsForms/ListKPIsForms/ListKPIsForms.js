@@ -25,11 +25,8 @@ import { KPIsForm } from "../KPIsForm";
 import { BasicModal } from "../../../Shared";
 import { PERIODS } from "../../../../utils";
 import { kpisCodes } from "../../../../utils/codes";
-import {
-  convertKPIsFieldsEngToEsp,
-  convertPeriodsEngToEsp,
-} from "../../../../utils/converts";
 import { formatDateView } from "../../../../utils/formatDate";
+import { useLanguage } from "../../../../contexts";
 const _ = require("lodash");
 
 const kpisFormController = new KPIsform();
@@ -44,6 +41,9 @@ export function ListKPIsForms(props) {
     user: { role, site },
     accessToken,
   } = useAuth();
+  const { translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
 
   useEffect(() => {
     (async () => {
@@ -77,13 +77,14 @@ export function ListKPIsForms(props) {
         accessToken={accessToken}
         year={yearSelected}
         site={siteSelected}
+        t={t}
       />
     </div>
   );
 }
 
 function TablePeriods(props) {
-  const { data, onReload, accessToken, year, site } = props;
+  const { data, onReload, accessToken, year, site, t } = props;
 
   const [showModal, setShowModal] = useState(false);
   const [titleModal, setTitleModal] = useState("");
@@ -111,7 +112,7 @@ function TablePeriods(props) {
   const handleDeleteModal = (period) => {
     const form = data.find((item) => item.period === period);
     setConfirmContent(
-      `Eliminar el formulario de KPIs con fecha ${formatDateView(form.date)}`
+      `${t("delete_dated_kpis_form")} ${formatDateView(form.date)}`
     );
     setDataDelete(form);
     onOpenCloseConfirm();
@@ -121,9 +122,7 @@ function TablePeriods(props) {
     //setFieldName(name);
     const form = data.find((item) => item.period === period);
     setTitleModal(
-      `Actualizar formulario efluente: ${convertPeriodsEngToEsp(form.period)}-${
-        form.year
-      }`
+      `${t("update")} ${t("kpis_form")}: ${t(form.period)}-${form.year}`
     );
     setModalContent(
       <KPIsForm
@@ -136,7 +135,7 @@ function TablePeriods(props) {
   };
 
   const openNewKPIsForm = (period) => {
-    setTitleModal(`Nuevo Formulario KPIs`);
+    setTitleModal(t("new_kpis_form"));
     setModalContent(
       <KPIsForm
         onClose={onOpenCloseModal}
@@ -235,23 +234,23 @@ function TablePeriods(props) {
       <Table celled={true} structured={true}>
         <TableHeader>
           <TableRow>
-            <TableHeaderCell rowSpan="2" textAlign="center">
-              Codigo
-            </TableHeaderCell>
-            <TableHeaderCell rowSpan="2" textAlign="center">
-            Concepto
-            </TableHeaderCell>
-            <TableHeaderCell rowSpan="2" textAlign="center">
-              Unidades
-            </TableHeaderCell>
-            <TableHeaderCell colSpan="14" textAlign="center">
-              PERIODO DE REPORTE {year}
-            </TableHeaderCell>
+            <Table.HeaderCell rowSpan="2" textAlign="center">
+              {t("code")}
+            </Table.HeaderCell>
+            <Table.HeaderCell rowSpan="2" textAlign="center">
+              {t("concept")}
+            </Table.HeaderCell>
+            <Table.HeaderCell rowSpan="2" textAlign="center">
+              {t("units")}
+            </Table.HeaderCell>
+            <Table.HeaderCell colSpan="14" textAlign="center">
+              {t("report_period")} {year}
+            </Table.HeaderCell>
           </TableRow>
           <TableRow>
             {periods.map((period, index) => (
               <TableHeaderCell key={index}>
-                {convertPeriodsEngToEsp(period)}
+                {t(period)}
                 {hasDataPeriod(period) ? (
                   <>
                     <Dropdown
@@ -263,12 +262,12 @@ function TablePeriods(props) {
                     >
                       <Dropdown.Menu>
                         <Dropdown.Item
-                          text="Editar"
+                          text={t("edit")}
                           icon="edit"
                           onClick={() => openUpdateKPIsForm(period)}
                         />
                         <Dropdown.Item
-                          text="Eliminar"
+                          text={t("delete")}
                           icon="trash"
                           onClick={() => handleDeleteModal(period)}
                         />
@@ -287,7 +286,7 @@ function TablePeriods(props) {
                     >
                       <Dropdown.Menu>
                         <Dropdown.Item
-                          text="Cargar datos"
+                          text={t("load_data")}
                           icon="plus"
                           onClick={() => openNewKPIsForm(period)}
                         />
@@ -297,8 +296,8 @@ function TablePeriods(props) {
                 )}
               </TableHeaderCell>
             ))}
-            <TableHeaderCell>Total</TableHeaderCell>
-            <TableHeaderCell>Promedio</TableHeaderCell>
+            <TableHeaderCell>{t("total")}</TableHeaderCell>
+            <TableHeaderCell>{t("average")}</TableHeaderCell>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -308,7 +307,7 @@ function TablePeriods(props) {
                 <TableRow key={f}>
                   <TableCell collapsing width={18}>
                     {" "}
-                    <Label ribbon>{convertKPIsFieldsEngToEsp(f)}</Label>
+                    <Label ribbon>{t(f)}</Label>
                   </TableCell>
                 </TableRow>
               </React.Fragment>
@@ -318,11 +317,11 @@ function TablePeriods(props) {
                 data={data}
                 calculateTotalAndAverage={calculateTotalAndAverage}
                 periods={periods}
+                t={t}
               />
             </>
           ))}
         </TableBody>
-
       </Table>
       {/* Modal para mostrar detalles del período seleccionado */}
       {showModal ? (
@@ -343,22 +342,23 @@ function TablePeriods(props) {
         onConfirm={onDelete}
         content={confirmContent}
         size="tiny"
-        cancelButton="Cancelar"
-        confirmButton="Aceptar"
+        cancelButton={t("cancel")}
+        confirmButton={t("accept")}
+        header={t("delete")}
       />
     </>
   );
 }
 
 function SubFields(props) {
-  const { f, listFields, periods, data, calculateTotalAndAverage } = props;
+  const { f, listFields, periods, data, calculateTotalAndAverage, t } = props;
 
   return listFields[f].map((field) => {
     return (
       <React.Fragment key={field}>
         <TableRow key={field}>
           <TableCell>{kpisCodes[field]}</TableCell>
-          <TableCell>{convertKPIsFieldsEngToEsp(field)}</TableCell>
+          <TableCell>{t(field)}</TableCell>
           <TableCell>{"-"}</TableCell>
           {periods.map((period) => {
             const item = data.find((d) => d.period === period);

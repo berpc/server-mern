@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { Tab, Button, Table, Divider, Icon , Dropdown, Segment, Header} from "semantic-ui-react";
+import {
+  Tab,
+  Button,
+  Table,
+  Divider,
+  Icon,
+  Dropdown,
+  Segment,
+  Header,
+} from "semantic-ui-react";
 import { BasicModal } from "../../../components/Shared";
 import {
   ListWaterForms,
@@ -16,6 +25,7 @@ import {
   isMaster,
 } from "../../../utils/checkPermission";
 import "./WaterForms.scss";
+import { useLanguage } from "../../../contexts";
 
 const siteController = new Site();
 
@@ -32,6 +42,10 @@ export function WaterForms() {
 
   const onOpenCloseModal = () => setShowModal((prevState) => !prevState);
   const onReload = () => setReload((prevState) => !prevState);
+
+  const { language, changeLanguage, translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
 
   const location = useLocation();
 
@@ -74,6 +88,7 @@ export function WaterForms() {
             <SelectedListSites
               sitesFilter={sitesFilter}
               handleSelected={handleSelected}
+              t={t}
             />
           ) : !site && siteSelected !== null ? (
             <ListWaterForms
@@ -83,55 +98,56 @@ export function WaterForms() {
               yearSelected={yearSelected}
             />
           ) : (
-            <ListWaterForms 
-            siteSelected={siteSelected}
-            yearSelected={yearSelected}
-            reload={reload} 
-            onReload={onReload} />
+            <ListWaterForms
+              siteSelected={siteSelected}
+              yearSelected={yearSelected}
+              reload={reload}
+              onReload={onReload}
+            />
           )}
         </Tab.Pane>
       ),
     },
   ];
 
-   // Generar una lista de años (por ejemplo, del 2000 al 2024)
-   const currentYear = new Date().getFullYear();
-   const years = Array.from({ length: 50 }, (_, i) => currentYear - i);
+  // Generar una lista de años (por ejemplo, del 2000 al 2024)
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 50 }, (_, i) => currentYear - i);
 
   return (
     <>
       <div className="water-forms-page">
-
-      <Segment textAlign="center">
+        <Segment textAlign="center">
           {" "}
-          <Header as="h1">AGUA</Header>
+          <Header as="h1">{t("WATER")}</Header>
         </Segment>
         <div className="water-forms-page__add">
           {siteSelected !== null || site ? (
             //      <Link to={"/admin/waterforms/newwaterform"} state= {{siteSelected: encrypt(siteSelected) }}
             // >
             <Button primary onClick={onOpenCloseModal}>
-              <Icon name="plus" /> Nuevo Formulario Agua
+              <Icon name="plus" /> {t("new_water_form")}
             </Button>
           ) : // </Link>
           null}
         </div>
         <>
-        {siteSelected !== null || site ? (
-          <Dropdown
-            label="Año"
-            placeholder="Seleccione"
-            options={years.map((year) => {
-              return {
-                key: year,
-                text: year,
-                value: year,
-              };
-            })}
-            selection
-            onChange={(_, data) => setYearSelected(data.value)}
-            value={yearSelected}
-          />) : null}
+          {siteSelected !== null || site ? (
+            <Dropdown
+              label={t("year")}
+              placeholder={t("select")}
+              options={years.map((year) => {
+                return {
+                  key: year,
+                  text: year,
+                  value: year,
+                };
+              })}
+              selection
+              onChange={(_, data) => setYearSelected(data.value)}
+              value={yearSelected}
+            />
+          ) : null}
         </>
         <Tab menu={{ secondary: true }} panes={panes} />
       </div>
@@ -139,18 +155,22 @@ export function WaterForms() {
       <BasicModal
         show={showModal}
         close={onOpenCloseModal}
-        title="Formulario Agua"
+        title={t("water_form")}
         size={"fullscreen"}
       >
-        <WaterForm onClose={onOpenCloseModal} onReload={onReload}   year={yearSelected}
-          siteSelected={siteSelected}/>
+        <WaterForm
+          onClose={onOpenCloseModal}
+          onReload={onReload}
+          year={yearSelected}
+          siteSelected={siteSelected}
+        />
       </BasicModal>
     </>
   );
 }
 
 function SelectedListSites(props) {
-  const { sitesFilter, role, permissionByRole, handleSelected } = props;
+  const { sitesFilter, role, permissionByRole, handleSelected, t } = props;
 
   return (
     <div>
@@ -169,9 +189,9 @@ function SelectedListSites(props) {
         <Table celled>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell>Razon Social</Table.HeaderCell>
-              <Table.HeaderCell>Email</Table.HeaderCell>
-              <Table.HeaderCell>Acciones</Table.HeaderCell>
+              <Table.HeaderCell>{t("company_name")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("email")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("actions")}</Table.HeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
@@ -190,11 +210,10 @@ function SelectedListSites(props) {
                         handleSelected(site);
                       }}
                     >
-                    <Icon name="angle double right" />
+                      <Icon name="angle double right" />
                     </Button>
                     // ) : null
                   }
-
                 </Table.Cell>
               </Table.Row>
             ))}

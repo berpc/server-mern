@@ -210,7 +210,7 @@ export class Energyform {
     };
     return fetch(url, params)
       .then((response) => {
-        return response;
+        return response.json();
       })
       .then((result) => {
         return result;

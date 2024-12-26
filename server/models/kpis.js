@@ -29,7 +29,8 @@ const KPIsSchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     total_electrical_energy_consumption:{
       code:String,
@@ -44,7 +45,8 @@ const KPIsSchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     total_energy_consumption:{
       code:String,
@@ -59,7 +61,8 @@ const KPIsSchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     total_renewable_energy:{
       code:String,
@@ -74,7 +77,8 @@ const KPIsSchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     percentage_of_renewable_energy:{
       code:String,
@@ -89,7 +93,8 @@ const KPIsSchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     percentage_energy_from_fossil_fuels:{
       code:String,
@@ -104,7 +109,8 @@ const KPIsSchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     total_energy_consumed_per_productive_unit:{
       code:String,
@@ -119,7 +125,8 @@ const KPIsSchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     total_cost_of_energy_consumed:{
       code:String,
@@ -134,7 +141,8 @@ const KPIsSchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
   },
   greenhouse_gas_indicators:{
@@ -151,7 +159,8 @@ const KPIsSchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     total_scope_2:{
       code:String,
@@ -166,7 +175,8 @@ const KPIsSchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     total_scope_3:{
       code:String,
@@ -181,7 +191,8 @@ const KPIsSchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     total_emissions_per_unit_produced:{
       value:Number,
@@ -194,7 +205,8 @@ const KPIsSchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     total_emissions:{
       code:String,
@@ -209,7 +221,8 @@ const KPIsSchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     scope_percentage_1:{
       code:String,
@@ -224,7 +237,8 @@ const KPIsSchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     scope_percentage_2:{
       code:String,
@@ -239,7 +253,8 @@ const KPIsSchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     scope_percentage_3:{
       code:String,
@@ -254,7 +269,8 @@ const KPIsSchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
   },
   active:Boolean

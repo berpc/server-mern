@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Tab, Button, Table, Divider, Icon, Segment, Header } from "semantic-ui-react";
+import {
+  Tab,
+  Button,
+  Table,
+  Divider,
+  Icon,
+  Segment,
+  Header,
+} from "semantic-ui-react";
 import { BasicModal } from "../../../components/Shared";
 import {
   ListEnergyForms,
@@ -17,6 +25,7 @@ import {
   isMaster,
 } from "../../../utils/checkPermission";
 import "./EnergyForms.scss";
+import { useLanguage } from "../../../contexts";
 
 const siteController = new Site();
 
@@ -34,6 +43,10 @@ export function EnergyForms() {
 
   const onOpenCloseModal = () => setShowModal((prevState) => !prevState);
   const onReload = () => setReload((prevState) => !prevState);
+
+  const { translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
 
   const location = useLocation();
 
@@ -66,7 +79,6 @@ export function EnergyForms() {
   const handleSelected = (idSite) => {
     setSiteSelected(idSite._id);
   };
-  console.log(siteSelected)
 
   const panes = [
     {
@@ -77,6 +89,7 @@ export function EnergyForms() {
             <SelectedListSites
               sitesFilter={sitesFilter}
               handleSelected={handleSelected}
+              t={t}
             />
           ) : !site && siteSelected !== null ? (
             <ListEnergyForms
@@ -86,9 +99,9 @@ export function EnergyForms() {
               yearSelected={yearSelected}
             />
           ) : (
-            <ListEnergyForms 
-              reload={reload} 
-              onReload={onReload} 
+            <ListEnergyForms
+              reload={reload}
+              onReload={onReload}
               siteSelected={site?._id || null}
               yearSelected={yearSelected}
             />
@@ -101,16 +114,16 @@ export function EnergyForms() {
   return (
     <>
       <div className="energy-forms-page">
-      <Segment textAlign="center">
+        <Segment textAlign="center">
           {" "}
-          <Header as="h1">ENERGIA</Header>
+          <Header as="h1">{t("ENERGY")}</Header>
         </Segment>
         <div className="energy-forms-page__add">
           {siteSelected !== null || site ? (
             //      <Link to={"/admin/energyforms/newenergyform"} state= {{siteSelected: encrypt(siteSelected) }}
             // >
             <Button primary onClick={onOpenCloseModal}>
-              <Icon name="plus" /> Nuevo Formulario Energia
+              <Icon name="plus" /> {t("new_energy_form")}
             </Button>
           ) : // </Link>
           null}
@@ -122,12 +135,12 @@ export function EnergyForms() {
       <BasicModal
         show={showModal}
         close={onOpenCloseModal}
-        title="Formulario Energia"
+        title={t("energy_form")}
         size={"fullscreen"}
       >
-        <EnergyForm 
-          onClose={onOpenCloseModal} 
-          onReload={onReload} 
+        <EnergyForm
+          onClose={onOpenCloseModal}
+          onReload={onReload}
           year={yearSelected}
           siteSelected={siteSelected}
         />
@@ -137,7 +150,7 @@ export function EnergyForms() {
 }
 
 function SelectedListSites(props) {
-  const { sitesFilter, role, permissionByRole, handleSelected } = props;
+  const { sitesFilter, role, permissionByRole, handleSelected, t } = props;
 
   return (
     <div>
@@ -156,9 +169,9 @@ function SelectedListSites(props) {
         <Table celled>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell>Razon Social</Table.HeaderCell>
-              <Table.HeaderCell>Email</Table.HeaderCell>
-              <Table.HeaderCell>Acciones</Table.HeaderCell>
+              <Table.HeaderCell>{t("company_name")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("email")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("actions")}</Table.HeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
@@ -177,7 +190,7 @@ function SelectedListSites(props) {
                         handleSelected(site);
                       }}
                     >
-               <Icon name="angle double right" />
+                      <Icon name="angle double right" />
                     </Button>
                     // ) : null
                   }

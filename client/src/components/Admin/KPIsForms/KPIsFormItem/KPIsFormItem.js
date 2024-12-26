@@ -11,7 +11,11 @@ import {
   isMaster,
 } from "../../../../utils/checkPermission";
 import "./KPIsFormItem.scss";
-import { formatDateHourCompleted, formatDateView } from "../../../../utils/formatDate";
+import {
+  formatDateHourCompleted,
+  formatDateView,
+} from "../../../../utils/formatDate";
+import { useLanguage } from "../../../../contexts";
 
 const kpisFormController = new KPIsform();
 const permissionController = new Permission();
@@ -21,12 +25,19 @@ export function KPIsFormItem(props) {
   const [showModal, setShowModal] = useState(false);
   const [titleModal, setTitleModal] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
-  const { accessToken  , user: { role }, } = useAuth();
+  const {
+    accessToken,
+    user: { role },
+  } = useAuth();
 
   const onOpenCloseModal = () => setShowModal((prevState) => !prevState);
   const onOpenCloseConfirm = () => setShowConfirm((prevState) => !prevState);
 
   const [permissionsByRole, setPermissionsByRole] = useState([]);
+
+  const { translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
 
   useEffect(() => {
     (async () => {
@@ -48,7 +59,7 @@ export function KPIsFormItem(props) {
   }, [role]);
 
   const openUpdateSite = () => {
-    setTitleModal(`Actualizar Formulario de Efluentes`);
+    setTitleModal(`${t("update")} ${"kpis_form"}`);
     onOpenCloseModal();
   };
 
@@ -65,16 +76,19 @@ export function KPIsFormItem(props) {
 
   return (
     <>
-
-        <Table.Row key={kpisForm._id}>
+      <Table.Row key={kpisForm._id}>
         <Table.Cell>
           <Icon color={kpisForm.active ? "green" : "red"} name="circle" />
         </Table.Cell>
         <Table.Cell>{formatDateView(kpisForm.date)}</Table.Cell>
         <Table.Cell>
-          {kpisForm.creator_user? 
-          kpisForm.creator_user.lastname? kpisForm.creator_user.lastname + " " + kpisForm.creator_user.firstname
-          : kpisForm.creator_user.email : null}
+          {kpisForm.creator_user
+            ? kpisForm.creator_user.lastname
+              ? kpisForm.creator_user.lastname +
+                " " +
+                kpisForm.creator_user.firstname
+              : kpisForm.creator_user.email
+            : null}
         </Table.Cell>
         <Table.Cell>
           {isMaster(role) ||
@@ -98,7 +112,7 @@ export function KPIsFormItem(props) {
           ) : null}
         </Table.Cell>
       </Table.Row>
-          {/* <Button icon as="a" href={siteForm.url} target="_blank">
+      {/* <Button icon as="a" href={siteForm.url} target="_blank">
             <Icon name="eye" />
           </Button>
           <Button icon primary onClick={openUpdateSite}>
@@ -108,7 +122,12 @@ export function KPIsFormItem(props) {
             <Icon name="trash" />
           </Button> */}
 
-      <BasicModal show={showModal} close={onOpenCloseModal} title={titleModal} size={'fullscreen'}>
+      <BasicModal
+        show={showModal}
+        close={onOpenCloseModal}
+        title={titleModal}
+        size={"fullscreen"}
+      >
         <KPIsForm
           onClose={onOpenCloseModal}
           onReload={onReload}
@@ -120,10 +139,12 @@ export function KPIsFormItem(props) {
         open={showConfirm}
         onCancel={onOpenCloseConfirm}
         onConfirm={onDelete}
-        content={`Eliminar el formulario de peligrosos con fecha ${formatDateView(kpisForm.date)}`}
+        content={`${t("delete_kpis_form_with_date")} ${formatDateView(
+          kpisForm.date
+        )}`}
         size="tiny"
-        cancelButton='Cancelar'
-        confirmButton="Aceptar"
+        cancelButton={t("cancel")}
+        confirmButton={t("accept")}
       />
     </>
   );

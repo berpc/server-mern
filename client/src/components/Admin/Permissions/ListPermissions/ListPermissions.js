@@ -113,7 +113,7 @@ export function ListPermissions(props) {
       hasPermission(permissionsByRole, role._id, "permissions", "view"))
   ) {
     if (!listRoles) return <Loader active inline="centered" />;
-    if (size(listRoles) === 0) return "No hay ningun rol";
+    if (size(listRoles) === 0) return t("there_is_no_permission");
     return (
       <div>
         <div>
@@ -138,7 +138,7 @@ export function ListPermissions(props) {
       hasPermission(permissionsByRole, role._id, "permissions", "view"))
   ) {
     if (!permissions) return <Loader active inline="centered" />;
-    if (size(permissions) === 0) return "No hay ningun permiso";
+    if (size(permissions) === 0) return t("there_is_no_permission");
     return (
       <div>
         <div>
@@ -153,11 +153,11 @@ export function ListPermissions(props) {
         <Table celled>
             <Table.Header>
               <Table.Row>
-                <Table.HeaderCell>Estado</Table.HeaderCell>
-                <Table.HeaderCell >Rol</Table.HeaderCell>
-                <Table.HeaderCell>Modulo</Table.HeaderCell>
-                <Table.HeaderCell>Accion</Table.HeaderCell>
-                <Table.HeaderCell>Acciones</Table.HeaderCell>
+                <Table.HeaderCell>{t("state")}</Table.HeaderCell>
+                <Table.HeaderCell >{t("role")}</Table.HeaderCell>
+                <Table.HeaderCell>{t("module")}</Table.HeaderCell>
+                <Table.HeaderCell>{t("action")}</Table.HeaderCell>
+                <Table.HeaderCell>{t("actions")}</Table.HeaderCell>
               </Table.Row>
             </Table.Header>
             <Table.Body>
@@ -215,7 +215,7 @@ function SearchStandardRole(props) {
       <Input
        icon='search'
        iconPosition='left'
-      placeholder='Buscar...'
+      placeholder={t("search")}
     onChange={_.debounce(handleSearchChange, 500, {
       leading: true,
     })}
@@ -284,7 +284,7 @@ function SearchStandardPermission(props) {
       <Input
        icon='search'
        iconPosition='left'
-      placeholder='Buscar...'
+      placeholder={t("search")}
     onChange={_.debounce(handleSearchChange, 500, {
       leading: true,
     })}

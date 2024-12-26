@@ -9,6 +9,7 @@ import { encrypt,decrypt } from '../../../utils/cryptoUtils';
 import { useLocation } from 'react-router-dom';
 import { hasPermission, isAdmin, isMaster } from "../../../utils/checkPermission";
 import "./ProductionForms.scss";
+import { useLanguage } from "../../../contexts";
 
 const siteController= new Site();
 
@@ -25,6 +26,10 @@ export function ProductionForms() {
 
   const onOpenCloseModal = () => setShowModal((prevState) => !prevState);
   const onReload = () => setReload((prevState) => !prevState);
+
+  const { translations } = useLanguage();
+  
+  const t = (key) => translations[key] || key ; // Función para obtener la traducción
 
   const location = useLocation();
 
@@ -67,6 +72,7 @@ export function ProductionForms() {
             <SelectedListSites
               sitesFilter={sitesFilter}
               handleSelected={handleSelected}
+              t={t}
             />
           ) : !site && siteSelected !== null ? (
             <ListProductionForms
@@ -97,14 +103,14 @@ export function ProductionForms() {
       <div className="production-forms-page">
         <Segment textAlign="center">
           {" "}
-          <Header as="h1">PRODUCCION</Header>
+          <Header as="h1">{t("PRODUCTION")}</Header>
         </Segment>
         <div className="production-forms-page__add">
           {siteSelected !== null || site ? (
             //      <Link to={"/admin/effluentforms/neweffluentform"} state= {{siteSelected: encrypt(siteSelected) }}
             // >
             <Button primary onClick={onOpenCloseModal}>
-              <Icon name="plus" /> Nuevo Formulario Produccion
+              <Icon name="plus" /> {t("new_production_form")}
             </Button>
           ) : // </Link>
           null}
@@ -112,8 +118,8 @@ export function ProductionForms() {
         <>
         {siteSelected !== null || site ? (
           <Dropdown
-            label="Año"
-            placeholder="Seleccione"
+            label={t("year")}
+            placeholder={t("select")}
             options={years.map((year) => {
               return {
                 key: year,
@@ -133,7 +139,7 @@ export function ProductionForms() {
       <BasicModal
         show={showModal}
         close={onOpenCloseModal}
-        title="Formulario Produccion"
+        title={t("production_form")}
         size={"fullscreen"}
       >
         <ProductionForm
@@ -148,7 +154,7 @@ export function ProductionForms() {
 }
 
 function SelectedListSites(props) {
-  const { sitesFilter, role, permissionByRole, handleSelected } = props;
+  const { sitesFilter, role, permissionByRole, handleSelected, t } = props;
 
   return (
     <div>
@@ -160,9 +166,9 @@ function SelectedListSites(props) {
         <Table celled>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell>Razon Social</Table.HeaderCell>
-              <Table.HeaderCell>Email</Table.HeaderCell>
-              <Table.HeaderCell>Acciones</Table.HeaderCell>
+              <Table.HeaderCell>{t("company_name")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("email")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("actions")}</Table.HeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>

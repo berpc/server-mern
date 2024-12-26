@@ -16,6 +16,7 @@ import { formatDateView } from "../../../../utils/formatDate";
 import { WaterForm}  from "../WaterForm/WaterForm";
 import { convertPeriodsEngToEsp, convertWaterFieldsEngToEsp } from "../../../../utils/converts";
 import { waterCodes } from "../../../../utils/codes";
+import { useLanguage } from "../../../../contexts";
 const _ = require("lodash");
 
 
@@ -32,6 +33,9 @@ export function ListWaterForms(props) {
       accessToken,
     } = useAuth();
   
+  const { language, changeLanguage, translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
 
     useEffect(() => {
       (async () => {
@@ -72,6 +76,7 @@ export function ListWaterForms(props) {
         accessToken={accessToken}
         year={yearSelected}
         site={siteSelected}
+        t={t}
       />
 
       <div className="list-water-forms__pagination">
@@ -119,7 +124,7 @@ export function ListWaterForms(props) {
 
 
 function SearchStandardPermission(props) {
-  const { dataOrigin, data, setData } = props;
+  const { dataOrigin, data, setData,t } = props;
   const [state, setState] = useState({
     isLoading: false,
     results: [],
@@ -156,7 +161,7 @@ function SearchStandardPermission(props) {
       <Input
        icon='search'
        iconPosition='left'
-      placeholder='Buscar...'
+      placeholder={t("search")}
     onChange={_.debounce(handleSearchChange, 500, {
       leading: true,
     })}
@@ -168,7 +173,7 @@ function SearchStandardPermission(props) {
 
 function TablePeriods(props) {
 
-  const { data, onReload, accessToken , year, site} = props;
+  const { data, onReload, accessToken , year, site, t} = props;
 
   const [showModal, setShowModal] = useState(false);
   const [titleModal, setTitleModal] = useState("");
@@ -197,7 +202,7 @@ function TablePeriods(props) {
   const handleDeleteModal = (period) => {
     const form = data.find((item) => item.period === period);
     setConfirmContent(
-      `Eliminar el formulario de Agua con fecha ${formatDateView(
+      `${t("delete_dated_water_form")} ${formatDateView(
         form.date
       )}`
     );
@@ -209,7 +214,7 @@ function TablePeriods(props) {
     //setFieldName(name);
     const form = data.find((item) => item.period === period);
     setTitleModal(
-      `Actualizar formulario efluente: ${convertPeriodsEngToEsp(form.period)}-${
+      `${t("update")} ${t("water_form")}: ${t(form.period)}-${
         form.year
       }`
     );
@@ -224,7 +229,7 @@ function TablePeriods(props) {
   };
 
   const openNewWaterForm = (period) => {
-    setTitleModal(`Nuevo Formulario Agua`);
+    setTitleModal(t("new_water_form"));
     setModalContent(
       <WaterForm onClose={onOpenCloseModal} onReload={onReload} period={period} year={year} siteSelected={site}/>
     );
@@ -269,7 +274,6 @@ function TablePeriods(props) {
 
   // Obtener todos los campos únicos
   const uniqueFields = determineFields();
-  console.log(uniqueFields)
 
   const calculateTotalAndAverage = (field) => {
     const values = data.map((item) => item[field]?.value || 0);
@@ -283,16 +287,24 @@ function TablePeriods(props) {
       <Table celled structured>
         <Table.Header>
           <Table.Row>
-            <Table.HeaderCell rowSpan='2'  textAlign="center">Codigo</Table.HeaderCell>
-            <Table.HeaderCell rowSpan='2'  textAlign="center">Concepto</Table.HeaderCell>
-            <Table.HeaderCell rowSpan='2'  textAlign="center">Unidades</Table.HeaderCell>
-            <Table.HeaderCell colSpan='14' textAlign="center">PERIODO DE REPORTE {year}</Table.HeaderCell>
+             <Table.HeaderCell rowSpan="2" textAlign="center">
+              {t("code")}
+            </Table.HeaderCell>
+            <Table.HeaderCell rowSpan="2" textAlign="center">
+            {t("concept")}
+            </Table.HeaderCell>
+            <Table.HeaderCell rowSpan="2" textAlign="center">
+            {t("units")}
+            </Table.HeaderCell>
+            <Table.HeaderCell colSpan="14" textAlign="center">
+            {t("report_period")} {year}
+            </Table.HeaderCell>
       </Table.Row>
       <Table.Row>
             {periods.map((period, index) => (
               <Table.HeaderCell key={index}>
 
-                {convertPeriodsEngToEsp(period)}
+                {t(period)}
                 {hasDataPeriod(period) ? (
                   <>
                     <Dropdown
@@ -305,12 +317,12 @@ function TablePeriods(props) {
                     >
                       <Dropdown.Menu>
                         <Dropdown.Item
-                          text="Editar"
+                          text={t("edit")}
                           icon="edit"
                           onClick={() => openUpdateEffluentForm(period)}
                         />
                         <Dropdown.Item
-                          text="Eliminar"
+                          text={t("delete")}
                           icon="trash"
                           onClick={() => handleDeleteModal(period)}
                         />
@@ -329,7 +341,7 @@ function TablePeriods(props) {
                     >
                       <Dropdown.Menu>
                         <Dropdown.Item
-                          text="Cargar datos"
+                          text={t("load_data")}
                           icon="plus"
                           onClick={() => openNewWaterForm(period)}
                         />
@@ -339,8 +351,8 @@ function TablePeriods(props) {
                 )}
               </Table.HeaderCell>
             ))}
-            <Table.HeaderCell>Total</Table.HeaderCell>
-            <Table.HeaderCell>Promedio</Table.HeaderCell>
+            <Table.HeaderCell>{t("total")}</Table.HeaderCell>
+            <Table.HeaderCell>{t("average")}</Table.HeaderCell>
           </Table.Row>
         </Table.Header>
         <Table.Body>
@@ -348,7 +360,7 @@ function TablePeriods(props) {
             <React.Fragment key={field}>
               <Table.Row>
                 <Table.Cell>{waterCodes[field]}</Table.Cell>
-                <Table.Cell>{convertWaterFieldsEngToEsp(field)}</Table.Cell>
+                <Table.Cell>{t(field)}</Table.Cell>
                 <Table.Cell>{"-"}</Table.Cell>
                 {periods.map((period) => {
                   const item = data.find((d) => d.period === period);
@@ -406,9 +418,10 @@ function TablePeriods(props) {
         onCancel={onOpenCloseConfirm}
         onConfirm={onDelete}
         content={confirmContent}
+        header={t("delete")}
         size="tiny"
-        cancelButton="Cancelar"
-        confirmButton="Aceptar"
+        cancelButton={t("cancel")}
+        confirmButton={t("accept")}
       />
     </>
   );

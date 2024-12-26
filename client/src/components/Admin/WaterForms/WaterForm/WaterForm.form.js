@@ -14,7 +14,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     cost_of_water_from_the_municipal_network: form?.cost_of_water_from_the_municipal_network || {
       code:waterCodes["cost_of_water_from_the_municipal_network"],
@@ -22,7 +22,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     rainwater_harvesting:form?.rainwater_harvesting || {
       code:waterCodes["rainwater_harvesting"],
@@ -30,7 +30,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     groundwater:form?.groundwater || {
       code:waterCodes["groundwater"],
@@ -38,7 +38,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     surface_water:form?.surface_water || {
       code:waterCodes["surface_water"],
@@ -46,7 +46,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     percentage_surface_water:form?.percentage_surface_water || {
       code:waterCodes["percentage_surface_water"],
@@ -54,7 +54,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     percentage_network_water:form?.percentage_network_water || {
       code:waterCodes["percentage_network_water"],
@@ -62,7 +62,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     percentage_groundwater:form?.percentage_groundwater || {
       code:waterCodes["percentage_groundwater"],
@@ -70,7 +70,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
     total_water_consumed_per_unit_produced:form?.total_water_consumed_per_unit_produced || {
       code:waterCodes["total_water_consumed_per_unit_produced"],
@@ -78,7 +78,7 @@ export function initialValues(form, period, year) {
       value:"",
       reviews:[
       ],
-        isApproved:false, file:null
+        isApproved:false, files:[]
     },
   };
 }

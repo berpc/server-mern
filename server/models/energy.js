@@ -33,7 +33,8 @@ const EnergySchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     electricity_cost:{
       code:String,
@@ -48,7 +49,8 @@ const EnergySchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     renewable_energies:{
       code:String,
@@ -63,7 +65,8 @@ const EnergySchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     renewable_energies_produced_and_consumed_on_site:{
       code:String,
@@ -78,7 +81,8 @@ const EnergySchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
   },
   fuels:{
@@ -93,7 +97,8 @@ const EnergySchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     steam_cost:{
       code:String,
@@ -108,7 +113,8 @@ const EnergySchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     natural_gas:{
       code:String,
@@ -123,7 +129,8 @@ const EnergySchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     natural_gas_cost:{
       value:Number,
@@ -136,7 +143,8 @@ const EnergySchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     glp:{
       code:String,
@@ -151,7 +159,8 @@ const EnergySchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     glp_cost:{
       code:String,
@@ -180,7 +189,8 @@ const EnergySchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     cost_of_heavy_fuel_oil:{
       code:String,
@@ -195,7 +205,8 @@ const EnergySchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     light_fuel_oil:{
       code:String,
@@ -210,7 +221,8 @@ const EnergySchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     cost_of_light_fuel_oil:{
       code:String,
@@ -225,7 +237,8 @@ const EnergySchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     coal:{
       code:String,
@@ -240,7 +253,8 @@ const EnergySchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     coal_cost:{
       code:String,
@@ -255,7 +269,8 @@ const EnergySchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     diesel:{
       code:String,
@@ -270,7 +285,8 @@ const EnergySchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     diesel_cost:{
       code:String,
@@ -285,7 +301,8 @@ const EnergySchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     gasoline_for_internal_vehicles:{
       code:String,
@@ -300,7 +317,8 @@ const EnergySchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     gasoline_cost_of_internal_vehicles:{
       code:String,
@@ -315,7 +333,8 @@ const EnergySchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     biomass:{
       code:String,
@@ -330,7 +349,8 @@ const EnergySchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
     biomass_cost:{
       code:String,
@@ -345,7 +365,8 @@ const EnergySchema = mongoose.Schema({
         comments:String
       }],
       isApproved:Boolean,
-      file:String
+       files:[{
+      url:String, name:String, uniqueName:String}],
     },
 
   },

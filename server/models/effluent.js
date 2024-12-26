@@ -31,7 +31,8 @@ const Effluentchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   total_industrial_effluents:{
     code:String,
@@ -45,7 +46,8 @@ const Effluentchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   sludge_mud_sent_for_disposal_landfill:{
     code:String,
@@ -59,7 +61,8 @@ const Effluentchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   total_effluents_per_unit_produced:{
     code:String,
@@ -73,7 +76,8 @@ const Effluentchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   percentage_domestic_effluents:{
     code:String,
@@ -87,7 +91,8 @@ const Effluentchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   percentage_industrial_effluents:{
     code:String,
@@ -101,7 +106,8 @@ const Effluentchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   active:Boolean
 });

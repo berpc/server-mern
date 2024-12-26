@@ -12,6 +12,7 @@ import {
 } from "../../../../utils/checkPermission";
 import "./EnergyFormItem.scss";
 import { formatDateHourCompleted, formatDateView } from "../../../../utils/formatDate";
+import { useLanguage } from "../../../../contexts";
 
 const energyFormController = new Energyform();
 const permissionController = new Permission();
@@ -27,6 +28,10 @@ export function EnergyFormItem(props) {
   const onOpenCloseConfirm = () => setShowConfirm((prevState) => !prevState);
 
   const [permissionsByRole, setPermissionsByRole] = useState([]);
+
+  const { translations } = useLanguage();
+  
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
 
   useEffect(() => {
     (async () => {
@@ -48,7 +53,7 @@ export function EnergyFormItem(props) {
   }, [role]);
 
   const openUpdateSite = () => {
-    setTitleModal(`Actualizar Formulario de Energia`);
+    setTitleModal(`${t("update")} ${t("energy_form")}`);
     onOpenCloseModal();
   };
 
@@ -120,7 +125,7 @@ export function EnergyFormItem(props) {
         open={showConfirm}
         onCancel={onOpenCloseConfirm}
         onConfirm={onDelete}
-        content={`Eliminar el formulario de energia con fecha ${formatDateView(energyForm.date)}`}
+        content={`${t("delete_energy_form_with_date")} ${formatDateView(energyForm.date)}`}
         size="mini"
       />
     </>

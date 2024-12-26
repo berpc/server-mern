@@ -7,6 +7,7 @@ import { isAdmin, isMaster } from "../../../../utils/checkPermission";
 import { initialValues, validationSchema } from "./SiteForm.form";
 import { useNavigate  } from 'react-router-dom';
 import "./SiteForm.scss";
+import { useLanguage } from "../../../../contexts";
 
 const siteController = new Site();
 const roleController = new Role();
@@ -18,6 +19,10 @@ export function SiteForm(props) {
     user: { role },
   } = useAuth();
   const [listRoles, setListRoles] = useState([]);
+
+      const { language, changeLanguage, translations } = useLanguage();
+    
+      const t = (key) => translations[key] || key; // Función para obtener la traducción
 
 
   useEffect(() => {
@@ -106,7 +111,7 @@ export function SiteForm(props) {
       </Form.Group>
 
       <Form.Button type="submit" primary fluid loading={formik.isSubmitting}>
-        {site ? "Actualizar datos" : "Crear Sitio"}
+        {site ? t("update") : t("create") }
       </Form.Button>
     </Form>
   );

@@ -21,7 +21,7 @@ import {
   Header,
 } from "semantic-ui-react";
 import { useDropzone } from "react-dropzone";
-import { useFormik, Field, FieldArray, FormikProvider, getIn } from "formik";
+import { useFormik,} from "formik";
 import { KPIsform } from "../../../../api";
 import { useAuth } from "../../../../hooks";
 import { ENV } from "../../../../utils";
@@ -35,12 +35,9 @@ import { useNavigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import { decrypt, encrypt } from "../../../../utils/cryptoUtils";
 import { PERIODS } from "../../../../utils";
-import {
-  convertKPIsFieldsEngToEsp,
-  convertPeriodsEngToEsp,
-} from "../../../../utils/converts";
 import "./KPIsForm.scss";
 import { kpisCodes } from "../../../../utils/codes";
+import { useLanguage } from "../../../../contexts";
 
 const kpisFormController = new KPIsform();
 
@@ -57,6 +54,10 @@ export function KPIsForm(props) {
   const location = useLocation();
   // const { siteSelected } = location.state || {};
 
+  const { translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
+
   if (!siteSelected) {
     // // Manejo de caso donde no hay datos en state (por ejemplo, acceso directo a la URL)
     // return <div>No se encontraron detalles de producto.</div>;
@@ -69,7 +70,7 @@ export function KPIsForm(props) {
 
   const openUpdateSite = (data, name) => {
     setFieldName(name);
-    setTitleModal(`Comentarios ${data}`);
+    setTitleModal(`${t("comments")} ${data}`);
     onOpenCloseModal();
   };
 
@@ -144,7 +145,6 @@ export function KPIsForm(props) {
           .map((period) => period);
 
         setListPeriods(availablePeriods);
-        console.log(availablePeriods);
       } catch (error) {
         console.error(error);
         setListPeriods([]);
@@ -156,9 +156,12 @@ export function KPIsForm(props) {
     <Form className="kpis-form" onSubmit={formik.handleSubmit}>
       {kpisForm ? (
         <Segment>
-          <Header as="h4"> Fecha: {formatDateView(formik.values.date)}</Header>
           <Header as="h4">
-            Usuario creador:{" "}
+            {" "}
+            {t("date")}: {formatDateView(formik.values.date)}
+          </Header>
+          <Header as="h4">
+            {t("creator_user")}:{" "}
             {formik.values.creator_user
               ? formik.values.creator_user.lastname
                 ? formik.values.creator_user.lastname +
@@ -175,8 +178,8 @@ export function KPIsForm(props) {
             <GridRow>
               <GridColumn>
                 <Form.Dropdown
-                  label="Año"
-                  placeholder="Seleccione"
+                  label={t("year")}
+                  placeholder={t("select")}
                   options={years.map((year) => {
                     return {
                       key: year,
@@ -194,12 +197,12 @@ export function KPIsForm(props) {
               </GridColumn>
               <GridColumn>
                 <Form.Dropdown
-                  label="Periodo"
-                  placeholder="Seleccione"
+                  label={t("period")}
+                  placeholder={t("select")}
                   options={listPeriods.map((period) => {
                     return {
                       key: period,
-                      text: convertPeriodsEngToEsp(period),
+                      text: t(period),
                       value: period,
                     };
                   })}
@@ -218,21 +221,19 @@ export function KPIsForm(props) {
       <Table size="small" celled>
         <Table.Header>
           <Table.Row>
-            <Table.HeaderCell width="1">Codigo</Table.HeaderCell>
-            <Table.HeaderCell width="6">Concepto</Table.HeaderCell>
-            <Table.HeaderCell width="2">Valor</Table.HeaderCell>
-            <Table.HeaderCell width="2">Unidad</Table.HeaderCell>
-            <Table.HeaderCell width="2">Estado</Table.HeaderCell>
-            <Table.HeaderCell>Acciones</Table.HeaderCell>
+            <Table.HeaderCell width="1">{t("code")}</Table.HeaderCell>
+            <Table.HeaderCell width="6">{t("concept")}</Table.HeaderCell>
+            <Table.HeaderCell width="2">{t("value")}</Table.HeaderCell>
+            <Table.HeaderCell width="2">{t("unit")}</Table.HeaderCell>
+            <Table.HeaderCell width="2">{t("state")}</Table.HeaderCell>
+            <Table.HeaderCell>{t("actions")}</Table.HeaderCell>
           </Table.Row>
         </Table.Header>
         <Table.Body>
           {/* Electricidad */}
           <Table.Row>
             <Table.Cell>
-              <Label ribbon>
-                {convertKPIsFieldsEngToEsp("energy_indicators")}
-              </Label>
+              <Label ribbon>{t("energy_indicators")}</Label>
             </Table.Cell>
             <Table.Cell></Table.Cell>
             <Table.Cell></Table.Cell>
@@ -250,7 +251,7 @@ export function KPIsForm(props) {
             </Table.Cell>
             <Table.Cell>
               <label className="label">
-                {convertKPIsFieldsEngToEsp("total_fuel_energy_consumption")}
+                {t("total_fuel_energy_consumption")}
               </label>
             </Table.Cell>
             <Table.Cell>
@@ -297,14 +298,14 @@ export function KPIsForm(props) {
 
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -331,7 +332,7 @@ export function KPIsForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertKPIsFieldsEngToEsp("total_fuel_energy_consumption"),
+                    t("total_fuel_energy_consumption"),
                     `energy_indicators.total_fuel_energy_consumption}`
                   );
                 }}
@@ -350,16 +351,14 @@ export function KPIsForm(props) {
             <Table.Cell>
               <label className="label">
                 {
-                  formik.values.energy_indicators.total_electrical_energy_consumption
-                    .code
+                  formik.values.energy_indicators
+                    .total_electrical_energy_consumption.code
                 }
               </label>
             </Table.Cell>
             <Table.Cell>
               <label className="label">
-                {convertKPIsFieldsEngToEsp(
-                  "total_electrical_energy_consumption"
-                )}
+                {t("total_electrical_energy_consumption")}
               </label>
             </Table.Cell>
             <Table.Cell>
@@ -404,14 +403,14 @@ export function KPIsForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -437,9 +436,7 @@ export function KPIsForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertKPIsFieldsEngToEsp(
-                      "total_electrical_energy_consumption"
-                    ),
+                    t("total_electrical_energy_consumption"),
                     `energy_indicators.total_electrical_energy_consumption}`
                   );
                 }}
@@ -457,16 +454,11 @@ export function KPIsForm(props) {
           <Table.Row>
             <Table.Cell>
               <label className="label">
-                {
-                  formik.values.energy_indicators.total_energy_consumption
-                    .code
-                }
+                {formik.values.energy_indicators.total_energy_consumption.code}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">
-                {convertKPIsFieldsEngToEsp("total_energy_consumption")}
-              </label>
+              <label className="label">{t("total_energy_consumption")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -508,14 +500,14 @@ export function KPIsForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -540,7 +532,7 @@ export function KPIsForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertKPIsFieldsEngToEsp("total_energy_consumption"),
+                    t("total_energy_consumption"),
                     `energy_indicators.total_energy_consumption}`
                   );
                 }}
@@ -558,16 +550,11 @@ export function KPIsForm(props) {
           <Table.Row>
             <Table.Cell>
               <label className="label">
-                {
-                  formik.values.energy_indicators.total_renewable_energy
-                    .code
-                }
+                {formik.values.energy_indicators.total_renewable_energy.code}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">
-                {convertKPIsFieldsEngToEsp("total_renewable_energy")}
-              </label>
+              <label className="label">{t("total_renewable_energy")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -609,14 +596,14 @@ export function KPIsForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -642,7 +629,7 @@ export function KPIsForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertKPIsFieldsEngToEsp("total_renewable_energy"),
+                    t("total_renewable_energy"),
                     `energy_indicators.total_renewable_energy}`
                   );
                 }}
@@ -668,7 +655,7 @@ export function KPIsForm(props) {
             </Table.Cell>
             <Table.Cell>
               <label className="label">
-                {convertKPIsFieldsEngToEsp("percentage_of_renewable_energy")}
+                {t("percentage_of_renewable_energy")}
               </label>
             </Table.Cell>
             <Table.Cell>
@@ -714,14 +701,14 @@ export function KPIsForm(props) {
 
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -747,7 +734,7 @@ export function KPIsForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertKPIsFieldsEngToEsp("percentage_of_renewable_energy"),
+                    t("percentage_of_renewable_energy"),
                     `energy_indicators.percentage_of_renewable_energy}`
                   );
                 }}
@@ -766,16 +753,14 @@ export function KPIsForm(props) {
             <Table.Cell>
               <label className="label">
                 {
-                  formik.values.energy_indicators.percentage_energy_from_fossil_fuels
-                    .code
+                  formik.values.energy_indicators
+                    .percentage_energy_from_fossil_fuels.code
                 }
               </label>
             </Table.Cell>
             <Table.Cell>
               <label className="label">
-                {convertKPIsFieldsEngToEsp(
-                  "percentage_energy_from_fossil_fuels"
-                )}
+                {t("percentage_energy_from_fossil_fuels")}
               </label>
             </Table.Cell>
             <Table.Cell>
@@ -820,14 +805,14 @@ export function KPIsForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -854,9 +839,7 @@ export function KPIsForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertKPIsFieldsEngToEsp(
-                      "percentage_energy_from_fossil_fuels"
-                    ),
+                    t("percentage_energy_from_fossil_fuels"),
                     `energy_indicators.percentage_energy_from_fossil_fuels`
                   );
                 }}
@@ -875,16 +858,14 @@ export function KPIsForm(props) {
             <Table.Cell>
               <label className="label">
                 {
-                  formik.values.energy_indicators.total_energy_consumed_per_productive_unit
-                    .code
+                  formik.values.energy_indicators
+                    .total_energy_consumed_per_productive_unit.code
                 }
               </label>
             </Table.Cell>
             <Table.Cell>
               <label className="label">
-                {convertKPIsFieldsEngToEsp(
-                  "total_energy_consumed_per_productive_unit"
-                )}
+                {t("total_energy_consumed_per_productive_unit")}
               </label>
             </Table.Cell>
             <Table.Cell>
@@ -930,14 +911,14 @@ export function KPIsForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -964,9 +945,7 @@ export function KPIsForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertKPIsFieldsEngToEsp(
-                      "total_energy_consumed_per_productive_unit"
-                    ),
+                    t("total_energy_consumed_per_productive_unit"),
                     `energy_indicators.total_energy_consumed_per_productive_unit`
                   );
                 }}
@@ -994,7 +973,7 @@ export function KPIsForm(props) {
             </Table.Cell>
             <Table.Cell>
               <label className="label">
-                {convertKPIsFieldsEngToEsp("total_cost_of_energy_consumed")}
+                {t("total_cost_of_energy_consumed")}
               </label>
             </Table.Cell>
             <Table.Cell>
@@ -1016,7 +995,7 @@ export function KPIsForm(props) {
 
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
                   { _id: "$ Arg", name: " $ Arg" },
                   { _id: "US$", name: "US$" },
@@ -1046,14 +1025,14 @@ export function KPIsForm(props) {
 
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -1080,7 +1059,7 @@ export function KPIsForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertKPIsFieldsEngToEsp("total_cost_of_energy_consumed"),
+                    t("total_cost_of_energy_consumed"),
                     `energy_indicators.total_cost_of_energy_consumed`
                   );
                 }}
@@ -1099,16 +1078,11 @@ export function KPIsForm(props) {
           <Table.Row>
             <Table.Cell>
               <label className="label">
-                {
-                  formik.values.greenhouse_gas_indicators.total_scope_1
-                    .code
-                }
+                {formik.values.greenhouse_gas_indicators.total_scope_1.code}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">
-                {convertKPIsFieldsEngToEsp("total_scope_1")}
-              </label>
+              <label className="label">{t("total_scope_1")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1150,14 +1124,14 @@ export function KPIsForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -1184,7 +1158,7 @@ export function KPIsForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertKPIsFieldsEngToEsp("total_scope_1"),
+                    t("total_scope_1"),
                     `greenhouse_gas_indicators.total_scope_1}`
                   );
                 }}
@@ -1202,16 +1176,11 @@ export function KPIsForm(props) {
           <Table.Row>
             <Table.Cell>
               <label className="label">
-                {
-                  formik.values.greenhouse_gas_indicators.total_scope_2
-                    .code
-                }
+                {formik.values.greenhouse_gas_indicators.total_scope_2.code}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">
-                {convertKPIsFieldsEngToEsp("total_scope_2")}
-              </label>
+              <label className="label">{t("total_scope_2")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1253,14 +1222,14 @@ export function KPIsForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -1286,7 +1255,7 @@ export function KPIsForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertKPIsFieldsEngToEsp("total_scope_2"),
+                    t("total_scope_2"),
                     `greenhouse_gas_indicators.total_scope_2}`
                   );
                 }}
@@ -1304,16 +1273,11 @@ export function KPIsForm(props) {
           <Table.Row>
             <Table.Cell>
               <label className="label">
-                {
-                  formik.values.greenhouse_gas_indicators.total_scope_3
-                    .code
-                }
+                {formik.values.greenhouse_gas_indicators.total_scope_3.code}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">
-                {convertKPIsFieldsEngToEsp("total_scope_3")}
-              </label>
+              <label className="label">{t("total_scope_3")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1355,14 +1319,14 @@ export function KPIsForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -1388,7 +1352,7 @@ export function KPIsForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertKPIsFieldsEngToEsp("total_scope_3"),
+                    t("total_scope_3"),
                     `greenhouse_gas_indicators.total_scope_3}`
                   );
                 }}
@@ -1407,14 +1371,14 @@ export function KPIsForm(props) {
             <Table.Cell>
               <label className="label">
                 {
-                  formik.values.greenhouse_gas_indicators.total_emissions_per_unit_produced
-                    .code
+                  formik.values.greenhouse_gas_indicators
+                    .total_emissions_per_unit_produced.code
                 }
               </label>
             </Table.Cell>
             <Table.Cell>
               <label className="label">
-                {convertKPIsFieldsEngToEsp("total_emissions_per_unit_produced")}
+                {t("total_emissions_per_unit_produced")}
               </label>
             </Table.Cell>
             <Table.Cell>
@@ -1459,14 +1423,14 @@ export function KPIsForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -1492,9 +1456,7 @@ export function KPIsForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertKPIsFieldsEngToEsp(
-                      "total_emissions_per_unit_produced"
-                    ),
+                    t("total_emissions_per_unit_produced"),
                     `greenhouse_gas_indicators.total_emissions_per_unit_produced}`
                   );
                 }}
@@ -1514,16 +1476,11 @@ export function KPIsForm(props) {
           <Table.Row>
             <Table.Cell>
               <label className="label">
-                {
-                  formik.values.greenhouse_gas_indicators.total_emissions
-                    .code
-                }
+                {formik.values.greenhouse_gas_indicators.total_emissions.code}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">
-                {convertKPIsFieldsEngToEsp("total_emissions")}
-              </label>
+              <label className="label">{t("total_emissions")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1566,14 +1523,14 @@ export function KPIsForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -1599,7 +1556,7 @@ export function KPIsForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertKPIsFieldsEngToEsp("total_emissions"),
+                    t("total_emissions"),
                     `greenhouse_gas_indicators.total_emissions}`
                   );
                 }}
@@ -1624,9 +1581,7 @@ export function KPIsForm(props) {
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">
-                {convertKPIsFieldsEngToEsp("scope_percentage_1")}
-              </label>
+              <label className="label">{t("scope_percentage_1")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1671,14 +1626,14 @@ export function KPIsForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -1704,7 +1659,7 @@ export function KPIsForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertKPIsFieldsEngToEsp("scope_percentage_1"),
+                    t("scope_percentage_1"),
                     `greenhouse_gas_indicators.scope_percentage_1}`
                   );
                 }}
@@ -1729,9 +1684,7 @@ export function KPIsForm(props) {
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">
-                {convertKPIsFieldsEngToEsp("scope_percentage_2")}
-              </label>
+              <label className="label">{t("scope_percentage_2")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1777,14 +1730,14 @@ export function KPIsForm(props) {
 
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -1810,7 +1763,7 @@ export function KPIsForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertKPIsFieldsEngToEsp("scope_percentage_2"),
+                    t("scope_percentage_2"),
                     `greenhouse_gas_indicators.scope_percentage_2}`
                   );
                 }}
@@ -1835,9 +1788,7 @@ export function KPIsForm(props) {
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">
-                {convertKPIsFieldsEngToEsp("scope_percentage_3")}
-              </label>
+              <label className="label">{t("scope_percentage_3")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1881,14 +1832,14 @@ export function KPIsForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -1914,7 +1865,7 @@ export function KPIsForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertKPIsFieldsEngToEsp("scope_percentage_3"),
+                    t("scope_percentage_3"),
                     `greenhouse_gas_indicators.scope_percentage_3}`
                   );
                 }}
@@ -1954,11 +1905,12 @@ export function KPIsForm(props) {
           onReload={onReload}
           kpisForm={kpisForm}
           user={user}
+          t={t}
         />
       </BasicModal>
       <Form.Group widths="2">
         <Form.Button type="submit" fluid primary loading={formik.isSubmitting}>
-          {!kpisForm ? "Guardar" : "Actualizar datos"}
+          {!kpisForm ? t("save") : t("update")}
         </Form.Button>
         <Form.Button
           type="button"
@@ -1969,7 +1921,7 @@ export function KPIsForm(props) {
             onClose ? onClose() : goBack();
           }}
         >
-          {"Cancelar"}
+          {t("cancel")}
         </Form.Button>
       </Form.Group>
     </Form>
@@ -1977,7 +1929,7 @@ export function KPIsForm(props) {
 }
 
 function Comments(props) {
-  const { formik, user, fieldName, onClose } = props;
+  const { formik, user, fieldName, onClose, t } = props;
   const [comment, setComment] = useState("");
   console.log(user);
 
@@ -2029,6 +1981,7 @@ function Comments(props) {
                         : false
                       : false
                   }
+                  t={t}
                 />
                 <Divider fitted />
               </>
@@ -2047,7 +2000,7 @@ function Comments(props) {
         <Form.Button
           type="button"
           icon="edit"
-          content={"Añadir comentario"}
+          content={t("add_comment")}
           primary
           fluid
           onClick={onChangeHandle}
@@ -2057,7 +2010,7 @@ function Comments(props) {
   );
 }
 
-const EditableComment = ({ id, author, date, content, onSave, active }) => {
+const EditableComment = ({ id, author, date, content, onSave, active, t }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(content);
 
@@ -2091,8 +2044,8 @@ const EditableComment = ({ id, author, date, content, onSave, active }) => {
           {isEditing ? (
             <Form reply>
               <Form.TextArea value={editedContent} onChange={handleChange} />
-              <Button content="Guardar" onClick={handleSave} primary />
-              <Button content="Cancelar" onClick={handleCancel} secondary />
+              <Button content={t("save")} onClick={handleSave} primary />
+              <Button content={t("cancel")} onClick={handleCancel} secondary />
             </Form>
           ) : (
             <div>{editedContent}</div>
@@ -2100,7 +2053,7 @@ const EditableComment = ({ id, author, date, content, onSave, active }) => {
         </Comment.Text>
         {active ? (
           <Comment.Actions>
-            <Comment.Action onClick={handleEdit}>Editar</Comment.Action>
+            <Comment.Action onClick={handleEdit}>{t("edit")}</Comment.Action>
           </Comment.Actions>
         ) : null}
       </Comment.Content>
@@ -2217,7 +2170,7 @@ function FileUpload(props) {
 }
 
 function FileViewer(props) {
-  const { fileName, handleRemove } = props;
+  const { fileName, handleRemove, t } = props;
   const [fileUrl, setFileUrl] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
 
@@ -2275,18 +2228,18 @@ function FileViewer(props) {
           {fileName && fileName.endsWith(".pdf") && (
             <iframe
               src={fileUrl}
-              title="Vista previa"
+              title={t("preview")}
               style={{ width: "100%", height: "500px" }}
             />
           )}
         </ModalContent>
         <ModalActions>
           <Button color="red" onClick={handleRemove}>
-            <Icon disabled name="trash alternate" /> Eliminar
+            <Icon disabled name="trash alternate" /> {t("delete")}
           </Button>
           <Button color="black" onClick={handleClosePreview}>
             <Icon disabled name="close" />
-            Cerrar
+            {t("close")}
           </Button>
         </ModalActions>
       </Modal>

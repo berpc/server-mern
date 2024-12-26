@@ -1,4 +1,4 @@
-import React, { useCallback,useRef, useState, useEffect } from "react";
+import React, { useCallback, useRef, useState, useEffect } from "react";
 import {
   Form,
   Label,
@@ -19,7 +19,8 @@ import {
   ModalActions,
   ModalHeader,
   ModalContent,
-  ModalDescription
+  Message,
+  List,
 } from "semantic-ui-react";
 import { useDropzone } from "react-dropzone";
 import { useFormik, Field, FieldArray, FormikProvider, getIn } from "formik";
@@ -36,12 +37,20 @@ import { useNavigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import { decrypt, encrypt } from "../../../../utils/cryptoUtils";
 import "./ProductionForm.scss";
-import { convertPeriodsEngToEsp, convertProductionFieldsEngToEsp } from "../../../../utils/converts";
+import { useLanguage } from "../../../../contexts";
 
 const productionFormController = new Productionform();
 
 export function ProductionForm(props) {
-  const { onClose, onReload, productionForm, production, siteSelected, period, year } = props;
+  const {
+    onClose,
+    onReload,
+    productionForm,
+    production,
+    siteSelected,
+    period,
+    year,
+  } = props;
   const { accessToken } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [titleModal, setTitleModal] = useState("");
@@ -53,6 +62,10 @@ export function ProductionForm(props) {
   const location = useLocation();
   const { productionSelected } = location.state || {};
 
+  const { translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
+
   if (!productionSelected) {
     // // Manejo de caso donde no hay datos en state (por ejemplo, acceso directo a la URL)
     // return <div>No se encontraron detalles de producto.</div>;
@@ -60,6 +73,9 @@ export function ProductionForm(props) {
 
   const [data, setData] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState("");
+  //const [newFiles, setNewFiles] = useState("");
+
+  const [newFiles, setNewFiles] = useState({});
 
   const navigate = useNavigate();
 
@@ -68,7 +84,7 @@ export function ProductionForm(props) {
 
   const openUpdateSite = (data, name) => {
     setFieldName(name);
-    setTitleModal(`Comentarios ${data}`);
+    setTitleModal(`${t("comments")} ${data}`);
     onOpenCloseModal();
   };
 
@@ -95,29 +111,53 @@ export function ProductionForm(props) {
           //     //console.log(formValue);
           // })
 
-
           // }else{
-            formValue.creator_user = user._id;
-            formValue.date = new Date();
-            if (user?.production) {
-              formValue.site = user.production._id;
-            } else {
-              if (siteSelected) {
-                formValue.site = siteSelected;
-              }
-              // } else {
-              //   // Desencriptar los datos recibidos
-              //   if (!productionForm) {
-              //     const productionData = decrypt(productionSelected);
-              //     formValue.production = productionData;
-              //   }
-              // }
+          formValue.creator_user = user._id;
+          formValue.date = new Date();
+          if (user?.production) {
+            formValue.site = user.production._id;
+          } else {
+            if (siteSelected) {
+              formValue.site = siteSelected;
             }
-            await productionFormController.createProductionForm(accessToken, formValue);
-            //console.log(formValue);
+            // } else {
+            //   // Desencriptar los datos recibidos
+            //   if (!productionForm) {
+            //     const productionData = decrypt(productionSelected);
+            //     formValue.production = productionData;
+            //   }
+            // }
+          }
+
+          // Recorrer el JSON
+          for (const clave in newFiles) {
+            if (newFiles.hasOwnProperty(clave)) {
+              let filesField = await uploadFiles(newFiles[clave]);
+
+              // Combina los archivos nuevos con los existentes
+              let finalFilesField = [...formValue[clave].files, ...filesField];
+
+              formValue[clave].files = finalFilesField;
+            }
+          }
+
+          await productionFormController.createProductionForm(
+            accessToken,
+            formValue
+          );
           // }
-    
         } else {
+          // Recorrer el JSON
+          for (const clave in newFiles) {
+            if (newFiles.hasOwnProperty(clave)) {
+              let filesField = await uploadFiles(newFiles[clave]);
+
+              // Combina los archivos nuevos con los existentes
+              let finalFilesField = [...formValue[clave].files, ...filesField];
+
+              formValue[clave].files = finalFilesField;
+            }
+          }
           await productionFormController.updateProductionForm(
             accessToken,
             productionForm._id,
@@ -137,72 +177,103 @@ export function ProductionForm(props) {
     },
   });
 
+  const uploadFiles = async (filesToUpload, formValue, field) => {
+    const formData = new FormData();
+    Array.from(filesToUpload).forEach((file) => {
+      formData.append("files", file);
+    });
+
+    // Luego de preparar los datos, puedes hacer la solicitud POST
+    if (filesToUpload.length === 0) {
+      console.log("no hay archivos");
+      //setErrorMessage("Por favor, selecciona al menos un archivo.");
+      return;
+    }
+
+    try {
+      // Realizar la solicitud POST al backend
+      const response = await productionFormController.uploadFileApi(
+        accessToken,
+        formData
+      );
+      if (response.code && response.code === 200) {
+        return response.files;
+      }
+      return [];
+    } catch (error) {
+      //error
+    }
+  };
+
   const goBack = () => {
     navigate(`/admin/data/productionforms`, {
       state: { productionSelected: productionSelected },
     });
   };
 
-    // Generar una lista de años (por ejemplo, del 2000 al 2024)
-    const currentYear = new Date().getFullYear();
-    const years = Array.from({ length: 50 }, (_, i) => currentYear - i);
-  
-    useEffect(() => {
-      (async () => {
-        try {
-          const response =
-            await productionFormController.getPeriodsProductionFormsBySiteAndYear(
-              accessToken,
-              siteSelected,
-              formik.values.year
-            );
-            const periods = PERIODS.map((item) => item);
-            const availablePeriods = periods
-              .filter((period) => !response.periods.includes(period))
-              .map((period) => period);
-    
-            setListPeriods(availablePeriods);
-            console.log(availablePeriods)
-        } catch (error) {
-          console.error(error);
-          setListPeriods([]);
-        }
-      })();
-    }, [formik.values.year]);
+  // Generar una lista de años (por ejemplo, del 2000 al 2024)
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 50 }, (_, i) => currentYear - i);
 
-    // const handleAdd = async () => {
-    //   const validationErrors = await formik.validateForm();;
-    //   console.log(Object.keys(validationErrors).length)
-    //   if(Object.keys(validationErrors).length === 0){
-    //     if (selectedMonth) {
-    //       setData((prevData) => ({
-    //         ...prevData,
-    //         [selectedMonth]: formik.values,
-    //       }));
-    //       setSelectedMonth('');
-    //     }
-    //   }
+  useEffect(() => {
+    (async () => {
+      try {
+        const response =
+          await productionFormController.getPeriodsProductionFormsBySiteAndYear(
+            accessToken,
+            siteSelected,
+            formik.values.year
+          );
+        const periods = PERIODS.map((item) => item);
+        const availablePeriods = periods
+          .filter((period) => !response.periods.includes(period))
+          .map((period) => period);
 
-    // };
+        setListPeriods(availablePeriods);
+        console.log(availablePeriods);
+      } catch (error) {
+        console.error(error);
+        setListPeriods([]);
+      }
+    })();
+  }, [formik.values.year]);
 
-    // useEffect(() => {
-    //   (async () => {
-    //     try {
-    //       setSelectedMonth(formik.values.period)
-    //     } catch (error) {
-    //       console.error(error);
-    //       setSelectedMonth("")
-    //     }
-    //   })();
-    // }, [formik.values.period]);
+  // const handleAdd = async () => {
+  //   const validationErrors = await formik.validateForm();;
+  //   console.log(Object.keys(validationErrors).length)
+  //   if(Object.keys(validationErrors).length === 0){
+  //     if (selectedMonth) {
+  //       setData((prevData) => ({
+  //         ...prevData,
+  //         [selectedMonth]: formik.values,
+  //       }));
+  //       setSelectedMonth('');
+  //     }
+  //   }
+
+  // };
+
+  // useEffect(() => {
+  //   (async () => {
+  //     try {
+  //       setSelectedMonth(formik.values.period)
+  //     } catch (error) {
+  //       console.error(error);
+  //       setSelectedMonth("")
+  //     }
+  //   })();
+  // }, [formik.values.period]);
 
   return (
     <Form className="production-form" onSubmit={formik.handleSubmit}>
       {productionForm ? (
         <Segment>
-          <Header as="h4"> Fecha: {formatDateView(formik.values.date)}</Header>
           <Header as="h4">
-            Usuario creador:{" "}
+            {" "}
+            {t("date")}: {formatDateView(formik.values.date)}
+          </Header>
+          <Header as="h4">
+            {t("creator_user")}:{" "}
             {formik.values.creator_user
               ? formik.values.creator_user.lastname
                 ? formik.values.creator_user.lastname +
@@ -213,14 +284,14 @@ export function ProductionForm(props) {
           </Header>
         </Segment>
       ) : null}
-            {!productionForm ? (
+      {!productionForm ? (
         <>
           <Grid columns={2} divided>
             <GridRow>
               <GridColumn>
                 <Form.Dropdown
-                  label="Año"
-                  placeholder="Seleccione"
+                  label={t("year")}
+                  placeholder={t("select")}
                   options={years.map((year) => {
                     return {
                       key: year,
@@ -238,12 +309,12 @@ export function ProductionForm(props) {
               </GridColumn>
               <GridColumn>
                 <Form.Dropdown
-                  label="Periodo"
-                  placeholder="Seleccione"
+                  label={t("period")}
+                  placeholder={t("select")}
                   options={listPeriods.map((period) => {
                     return {
                       key: period,
-                      text: convertPeriodsEngToEsp(period),
+                      text: t(period),
                       value: period,
                     };
                   })}
@@ -275,41 +346,42 @@ export function ProductionForm(props) {
       <Table size="small" celled>
         <Table.Header>
           <Table.Row>
-          <Table.HeaderCell width="1">Codigo</Table.HeaderCell>
-            <Table.HeaderCell width="6">Concepto</Table.HeaderCell>
-            <Table.HeaderCell width="2">Valor</Table.HeaderCell>
-            <Table.HeaderCell width="2">Unidad</Table.HeaderCell>
-            <Table.HeaderCell width="2">Estado</Table.HeaderCell>
-            <Table.HeaderCell>Acciones</Table.HeaderCell>
+            <Table.HeaderCell width="1">{t("code")}</Table.HeaderCell>
+            <Table.HeaderCell width="6">{t("concept")}</Table.HeaderCell>
+            <Table.HeaderCell width="2">{t("value")}</Table.HeaderCell>
+            <Table.HeaderCell width="2">{t("unit")}</Table.HeaderCell>
+            <Table.HeaderCell width="2">{t("state")}</Table.HeaderCell>
+            <Table.HeaderCell>{t("actions")}</Table.HeaderCell>
           </Table.Row>
         </Table.Header>
         <Table.Body>
           <Table.Row>
-
-          <Table.Cell>
+            <Table.Cell>
               <label className="label">
                 {formik.values.production_volume.code}{" "}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">{convertProductionFieldsEngToEsp("production_volume")}</label>
+              <label className="label">{t("production_volume")}</label>
             </Table.Cell>
             <Table.Cell>
-            <Form.Input
+              <Form.Input
                 type="string"
                 name="production_volume.value"
                 onChange={formik.handleChange}
                 value={formik.values.production_volume.value}
-                error={formik.errors.production_volume?.value? formik.errors.production_volume.value : null}
+                error={
+                  formik.errors.production_volume?.value
+                    ? formik.errors.production_volume.value
+                    : null
+                }
               />
-             
-           
-           </Table.Cell>
+            </Table.Cell>
 
-           <Table.Cell>
-            <Form.Dropdown
+            <Table.Cell>
+              <Form.Dropdown
                 //placeholder="Celda datos fijos"
-                options={[{key:1, value:true,name:"dato"}].map((ds) => {
+                options={[{ key: 1, value: true, name: "dato" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -321,26 +393,40 @@ export function ProductionForm(props) {
                   formik.setFieldValue("production_volume.unit", data.value)
                 }
                 value={formik.values.production_volume.unit}
-                error={formik.errors.production_volume?.unit? formik.errors.production_volume.unit : null}
+                error={
+                  formik.errors.production_volume?.unit
+                    ? formik.errors.production_volume.unit
+                    : null
+                }
               />
             </Table.Cell>
 
-              <Table.Cell>
+            <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("production_volume.isApproved", data.value)
+                  formik.setFieldValue(
+                    "production_volume.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.production_volume.isApproved}
-                error={formik.errors.production_volume?.isApproved? formik.errors.production_volume.isApproved : null}
+                error={
+                  formik.errors.production_volume?.isApproved
+                    ? formik.errors.production_volume.isApproved
+                    : null
+                }
               />
             </Table.Cell>
             <Table.Cell>
@@ -349,26 +435,33 @@ export function ProductionForm(props) {
                 type="button"
                 primary
                 onClick={() => {
-                  openUpdateSite(convertProductionFieldsEngToEsp("production_volume"), "production_volume");
+                  openUpdateSite(t("production_volume"), "production_volume");
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"production_volume"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"production_volume"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
-                    
+
           <Table.Row>
-          <Table.Cell>
+            <Table.Cell>
               <label className="label">
                 {formik.values.annual_average.code}{" "}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">{convertProductionFieldsEngToEsp("annual_average")}</label>
+              <label className="label">{t("annual_average")}</label>
             </Table.Cell>
             <Table.Cell>
-                    <Form.Input
+              <Form.Input
                 type="number"
                 name="annual_average.value"
                 onChange={formik.handleChange}
@@ -377,9 +470,9 @@ export function ProductionForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-            <Form.Dropdown
+              <Form.Dropdown
                 //placeholder="Celda datos fijos"
-                options={[{key:1, value:true,name:"dato"}].map((ds) => {
+                options={[{ key: 1, value: true, name: "dato" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -395,12 +488,15 @@ export function ProductionForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-            <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -411,9 +507,7 @@ export function ProductionForm(props) {
                 value={formik.values.annual_average.isApproved}
                 error={formik.errors.annual_average}
               />
-              
             </Table.Cell>
-
 
             <Table.Cell>
               <Button
@@ -421,15 +515,21 @@ export function ProductionForm(props) {
                 type="button"
                 primary
                 onClick={() => {
-                  openUpdateSite(convertProductionFieldsEngToEsp("annual_average"), "annual_average");
+                  openUpdateSite(t("annual_average"), "annual_average");
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"annual_average"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"annual_average"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
-            </Table.Row>
-         
+          </Table.Row>
         </Table.Body>
 
         {/* <TableFooter fullWidth>
@@ -446,7 +546,6 @@ export function ProductionForm(props) {
         </TableHeaderCell>
       </TableRow>
     </TableFooter> */}
-
       </Table>
 
       <BasicModal show={showModal} close={onOpenCloseModal} title={titleModal}>
@@ -457,14 +556,15 @@ export function ProductionForm(props) {
           onReload={onReload}
           productionForm={productionForm}
           user={user}
+          t={t}
         />
       </BasicModal>
       <Form.Group widths="2">
-      {/* <Form.Button type="button"    secondary
+        {/* <Form.Button type="button"    secondary
           fluid onClick={handleAdd}>Añadir
         </Form.Button> */}
         <Form.Button type="submit" fluid primary loading={formik.isSubmitting}>
-          {!productionForm ? "Guardar" : "Actualizar datos"}
+          {!productionForm ? t("save") : t("update")}
         </Form.Button>
         <Form.Button
           type="button"
@@ -475,7 +575,7 @@ export function ProductionForm(props) {
             onClose ? onClose() : goBack();
           }}
         >
-          {"Cancelar"}
+          {t("cancel")}
         </Form.Button>
       </Form.Group>
     </Form>
@@ -483,7 +583,7 @@ export function ProductionForm(props) {
 }
 
 function Comments(props) {
-  const { formik, user, fieldName, onClose } = props;
+  const { formik, user, fieldName, onClose, t } = props;
   const [comment, setComment] = useState("");
 
   const onChangeHandle = () => {
@@ -534,6 +634,7 @@ function Comments(props) {
                         : false
                       : false
                   }
+                  t={t}
                 />
                 <Divider fitted />
               </>
@@ -552,7 +653,7 @@ function Comments(props) {
         <Form.Button
           type="button"
           icon="edit"
-          content={"Añadir comentario"}
+          content={t("add_comment")}
           primary
           fluid
           onClick={onChangeHandle}
@@ -562,7 +663,7 @@ function Comments(props) {
   );
 }
 
-const EditableComment = ({ id, author, date, content, onSave, active }) => {
+const EditableComment = ({ id, author, date, content, onSave, active, t }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(content);
 
@@ -596,8 +697,8 @@ const EditableComment = ({ id, author, date, content, onSave, active }) => {
           {isEditing ? (
             <Form reply>
               <Form.TextArea value={editedContent} onChange={handleChange} />
-              <Button content="Guardar" onClick={handleSave} primary />
-              <Button content="Cancelar" onClick={handleCancel} secondary />
+              <Button content={t("save")} onClick={handleSave} primary />
+              <Button content={t("cancel")} onClick={handleCancel} secondary />
             </Form>
           ) : (
             <div>{editedContent}</div>
@@ -605,7 +706,7 @@ const EditableComment = ({ id, author, date, content, onSave, active }) => {
         </Comment.Text>
         {active ? (
           <Comment.Actions>
-            <Comment.Action onClick={handleEdit}>Editar</Comment.Action>
+            <Comment.Action onClick={handleEdit}>{t("edit")}</Comment.Action>
           </Comment.Actions>
         ) : null}
       </Comment.Content>
@@ -613,93 +714,93 @@ const EditableComment = ({ id, author, date, content, onSave, active }) => {
   );
 };
 
-function FileUpload (props) {
-  const {accessToken, data, field}=props;
-  const [file, setFile] = useState(null);
-  const [fileName, setFileName] = useState(null);
-  const [message, setMessage] = useState('');
+// function FileUpload (props) {
+//   const {accessToken, data, field}=props;
+//   const [file, setFile] = useState(null);
+//   const [fileName, setFileName] = useState(null);
+//   const [message, setMessage] = useState('');
 
-  const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf',  
-    //'application/vnd.ms-excel', // .xls
-    //'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' // .xlsx
-    ];
+//   const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf',
+//     //'application/vnd.ms-excel', // .xls
+//     //'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' // .xlsx
+//     ];
 
-  useEffect(() => {
-    if (data.values[field] && data.values[field].file!==null) {
-     setFileName(data.values[field].file);
-    }
-  }, [field]);
+//   useEffect(() => {
+//     if (data.values[field] && data.values[field].file!==null) {
+//      setFileName(data.values[field].file);
+//     }
+//   }, [field]);
 
-   const handleFileChange = async (event) => {
-    const file = event.target.files[0];
-    
-    if (file) {
-      if (!allowedTypes.includes(file.type)) {
-        console.log('Tipo de archivo no permitido. Debe ser JPG, PNG o PDF.');
-      } else {
-      setMessage(`Archivo seleccionado: ${file.name}`);
+//    const handleFileChange = async (event) => {
+//     const file = event.target.files[0];
 
-      const formData = new FormData();
-      formData.append('file', file);
+//     if (file) {
+//       if (!allowedTypes.includes(file.type)) {
+//         console.log('Tipo de archivo no permitido. Debe ser JPG, PNG o PDF.');
+//       } else {
+//       setMessage(`Archivo seleccionado: ${file.name}`);
 
-      try {
-        const response = await productionFormController.uploadFileApi(accessToken,formData);
-        setMessage(response.msg);
-        if(response.status && response.status===200){
-          setFile(file);
-          setFileName(file.name);
-          data.setFieldValue(`${field}.file`, file.name)
-        }
-      } catch (error) {
-        setMessage('Error al subir el archivo');
-      }
-    }
-    }
-  };
+//       const formData = new FormData();
+//       formData.append('file', file);
 
-  const handleButtonClick = (event) => {
-    event.preventDefault(); // Evita que el formulario se envíe
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.onchange = handleFileChange;
-    input.click();
-  };
+//       try {
+//         const response = await productionFormController.uploadFileApi(accessToken,formData);
+//         setMessage(response.msg);
+//         if(response.status && response.status===200){
+//           setFile(file);
+//           setFileName(file.name);
+//           data.setFieldValue(`${field}.file`, file.name)
+//         }
+//       } catch (error) {
+//         setMessage('Error al subir el archivo');
+//       }
+//     }
+//     }
+//   };
 
-  const handleRemoveFile = async () => {
-    setFile(null); // Elimina el archivo
-    setFileName(null);
-    try {
-      const response = await productionFormController.deleteFileApi(accessToken,fileName);
-      setMessage(response.message);
-      removeFile();
-    } catch (error) {
-      setMessage('Error al elimianr el archivo');
-    }
-  };
+//   const handleButtonClick = (event) => {
+//     event.preventDefault(); // Evita que el formulario se envíe
+//     const input = document.createElement('input');
+//     input.type = 'file';
+//     input.onchange = handleFileChange;
+//     input.click();
+//   };
 
-  const removeFile = async () => {
-    data.setFieldValue(`${field}.file`, null)
-  };
+//   const handleRemoveFile = async () => {
+//     setFile(null); // Elimina el archivo
+//     setFileName(null);
+//     try {
+//       const response = await productionFormController.deleteFileApi(accessToken,fileName);
+//       setMessage(response.message);
+//       removeFile();
+//     } catch (error) {
+//       setMessage('Error al elimianr el archivo');
+//     }
+//   };
 
-  return (
-    <>
-     
-      {fileName? (
-        <>
-          {/* <p>{file.name}</p> */}
-          <FileViewer fileName={fileName} handleRemove={handleRemoveFile}/>
-        </>
-      ):  <Button icon onClick={handleButtonClick}>
-                   <Icon name="paperclip" />
-    </Button>}
-    </>
-  );
+//   const removeFile = async () => {
+//     data.setFieldValue(`${field}.file`, null)
+//   };
 
-};
+//   return (
+//     <>
 
-function FileViewer (props){
-  const {fileName, handleRemove}=props;
-  const [fileUrl, setFileUrl] = useState('');
+//       {fileName? (
+//         <>
+//           {/* <p>{file.name}</p> */}
+//           <FileViewer fileName={fileName} handleRemove={handleRemoveFile}/>
+//         </>
+//       ):  <Button icon onClick={handleButtonClick}>
+//                    <Icon name="paperclip" />
+//     </Button>}
+//     </>
+//   );
+
+// };
+
+function FileViewer(props) {
+  const { fileName, fileUniqueName, handleRemove, t } = props;
+  const [fileUrl, setFileUrl] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
 
   useEffect(() => {
@@ -707,19 +808,21 @@ function FileViewer (props){
       setFileUrl(fileName); // Construye la URL del archivo
       (async () => {
         try {
-          const response = await productionFormController.getFileApi(fileName);
+          const response = await productionFormController.getFileApi(
+            fileUniqueName
+          );
           setFileUrl(response); // Construye la URL del archivo
+          console.log(setFileUrl);
           //setMessage(response.message);
         } catch (error) {
           //setMessage('Error al elimianr el archivo');
         }
-          })();
-    
+      })();
     }
   }, [fileName]);
 
   const handleOpenPreview = (event) => {
-    event.preventDefault(); 
+    event.preventDefault();
     setPreviewOpen(true);
   };
 
@@ -730,35 +833,233 @@ function FileViewer (props){
 
   return (
     <>
+      <List.Content floated="left">{fileName}</List.Content>
+      <List.Content floated="right">
+        {" "}
+        <Button
+          color="red"
+          onClick={() => handleRemove(fileUniqueName)}
+          icon="trash alternate"
+        />
+      </List.Content>
       {/* //<Button onClick={handleOpenPreview}> {fileName}</Button> */}
-       
-    <Modal
-      onClose={ handleClosePreview}
-      onOpen={handleOpenPreview}
-      open={previewOpen}
-      trigger={<Button primary icon><Icon name="file alternate"/></Button>}
-    >
-      <ModalHeader>{fileName}</ModalHeader>
-      <ModalContent>
-        {fileName && (fileName.endsWith('.jpg') || fileName.endsWith('.png') || fileName.endsWith('.jpeg'))  && (
-            <Image src={fileUrl} alt="Vista previa" style={{ maxWidth: '100%' }} />
-          )}
-          {fileName && fileName.endsWith('.pdf') && (
-            <iframe src={fileUrl} title="Vista previa" style={{ width: '100%', height: '500px' }} />
-          )}
-      </ModalContent>
-      <ModalActions>
-      <Button color="red" onClick={handleRemove}>
-          <Icon disabled name='trash alternate' /> Eliminar
-          </Button>
-        <Button color='black' onClick={handleClosePreview}>
-        <Icon disabled name='close' />Cerrar
-        </Button>
-      </ModalActions>
-    </Modal>
+      <List.Content floated="right">
+        <Modal
+          onClose={handleClosePreview}
+          onOpen={handleOpenPreview}
+          open={previewOpen}
+          trigger={
+            <Button primary icon>
+              <Icon name="eye" />
+            </Button>
+          }
+        >
+          <ModalHeader>{fileName}</ModalHeader>
+          <ModalContent>
+            {fileName &&
+              (fileName.endsWith(".jpg") ||
+                fileName.endsWith(".png") ||
+                fileName.endsWith(".jpeg")) && (
+                <Image
+                  src={fileUrl}
+                  alt="Vista previa"
+                  style={{ maxWidth: "100%" }}
+                />
+              )}
+            {fileName && fileName.endsWith(".pdf") && (
+              <iframe
+                src={fileUrl}
+                title={t("preview")}
+                style={{ width: "100%", height: "500px" }}
+              />
+            )}
+          </ModalContent>
+          <ModalActions>
+            {/* <Button color="red" onClick={() => handleRemove(fileName)}>
+            <Icon disabled name="trash alternate" /> Eliminar
+          </Button> */}
+            <Button color="black" onClick={handleClosePreview}>
+              <Icon disabled name="close" />
+              {t("close")}
+            </Button>
+          </ModalActions>
+        </Modal>
+      </List.Content>
     </>
   );
-};
+}
+
+function FileUpload(props) {
+  const { accessToken, data, field, newFiles, setNewFiles, t } = props;
+  const [files, setFiles] = useState([]);
+  const [filesView, setFilesView] = useState([]);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [openModal, setOpenModal] = useState(false); // Para controlar el estado del modal
+
+  useEffect(() => {
+    if (data.values[field].files) {
+      setFilesView(data.values[field].files); // Construye la URL del archivo
+    }
+  }, [data]);
+
+  const handleButtonClick = (event) => {
+    event.preventDefault(); // Evita que el formulario se envíe
+    const input = document.createElement("input");
+    input.type = "file";
+    input.multiple = true;
+    input.onchange = handleFileChange;
+    input.click();
+  };
+
+  // Maneja el cambio cuando se seleccionan archivos
+  const handleFileChange = async (e) => {
+    e.preventDefault(); // Evita que el formulario se envíe
+    const selectedFiles = e.target.files;
+    setNewFiles({ ...newFiles, [field]: Array.from(selectedFiles) });
+    //data.setFieldValue(`${field}.files`,Array.from(selectedFiles))
+    setFiles([...selectedFiles]);
+  };
+
+  // // Función para subir archivos
+  // const uploadFiles = async (filesToUpload) => {
+  //   const formData = new FormData();
+  //   Array.from(filesToUpload).forEach((file) => {
+  //     formData.append("files", file);
+  //   });
+
+  //   // Luego de preparar los datos, puedes hacer la solicitud POST
+  //   // axios.post('url_del_backend', formData, { ... })
+  //   setErrorMessage("");
+  //   setSuccessMessage("");
+  //   console.log(filesToUpload);
+  //   if (filesToUpload.length === 0) {
+  //     console.log("no hay archivos");
+  //     setErrorMessage("Por favor, selecciona al menos un archivo.");
+  //     return;
+  //   }
+
+  //   try {
+  //     // Realizar la solicitud POST al backend
+  //     const response = await productionFormController.uploadFileApi(
+  //       accessToken,
+  //       formData
+  //     );
+  //     console.log(response);
+  //     if (response.code && response.code === 200) {
+  //       console.log("aca", response.files);
+  //       let data=[...uploadedFiles,...response.files]
+  //       console.log("aca3",data)
+  //       setUploadedFiles(data); // Suponiendo que el backend devuelve las rutas de los archivos subidos
+  //       setSuccessMessage(response.msg);
+  //       setErrorMessage("");
+  //       data.setFieldValue(`${field}.files`, data);
+  //       setFiles([]); // Limpiar los archivos seleccionados después de subir
+  //     }
+  //   } catch (error) {
+  //     setErrorMessage("Hubo un error al subir los archivos.");
+  //     setSuccessMessage("");
+  //   }
+  // };
+
+  // Función para cerrar el modal
+  const closeModal = (event) => {
+    event.preventDefault();
+    setOpenModal(!openModal);
+  };
+
+  const handleRemoveFile = async (file) => {
+    try {
+      const updatedFiles = filesView.filter((f) => f.uniqueName !== file);
+      setFilesView(updatedFiles);
+      const response = await productionFormController.deleteFileApi(
+        accessToken,
+        file
+      );
+      //setMessage(response.message);
+      removeFile(updatedFiles);
+    } catch (error) {
+      // setMessage('Error al elimianr el archivo');
+    }
+  };
+
+  const removeFile = async (updatedFiles) => {
+    data.setFieldValue(`${field}.files`, updatedFiles);
+  };
+
+  return (
+    <>
+      {/* Input para seleccionar los archivos */}
+      {/* <Input
+        type="file"
+        multiple
+        icon={"paperclip"}
+        onChange={handleFileUpload}
+      /> */}
+
+      <Button
+        default
+        onClick={handleButtonClick}
+        icon="paperclip"
+        style={{ marginTop: "10px" }}
+        color={files.length > 0 ? "green" : "grey"}
+      ></Button>
+
+      {/* Mensajes de éxito o error */}
+      {successMessage && (
+        <Message success>
+          <Message.Header>Éxito</Message.Header>
+          <p>{successMessage}</p>
+        </Message>
+      )}
+
+      {errorMessage && (
+        <Message error>
+          <Message.Header>Error</Message.Header>
+          <p>{errorMessage}</p>
+        </Message>
+      )}
+
+      <Button
+        primary
+        onClick={closeModal}
+        style={{ marginTop: "10px" }}
+        icon="eye"
+      ></Button>
+      {/* Modal para mostrar los archivos subidos */}
+      <Modal open={openModal} onClose={closeModal} size="tiny">
+        <Modal.Header>Archivos subidos</Modal.Header>
+        <Modal.Content>
+          {filesView.length > 0 ? (
+            <List divided>
+              {filesView.map((filePath, index) => (
+                <List.Item key={index}>
+                  {/* <a href={`/${filePath.url}`} target="_blank" rel="noopener noreferrer">
+                      {filePath.url}
+                    </a> */}
+
+                  <FileViewer
+                    fileName={filePath.name}
+                    fileUniqueName={filePath.uniqueName}
+                    handleRemove={handleRemoveFile}
+                    t={t}
+                  />
+                </List.Item>
+              ))}
+            </List>
+          ) : (
+            <p>No se encontraron archivos subidos.</p>
+          )}
+        </Modal.Content>
+        <Modal.Actions>
+          <Button color="green" onClick={closeModal}>
+            {t("close")}
+          </Button>
+        </Modal.Actions>
+      </Modal>
+    </>
+  );
+}
 
 // function ModalComments() {
 //   const [open, setOpen] = React.useState(false)

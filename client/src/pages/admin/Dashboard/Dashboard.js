@@ -7,19 +7,23 @@ import { useAuth } from "../../../hooks";
 import { isAdmin, hasPermission } from "../../../utils/checkPermission";
 import { ErrorAccessDenied } from "../Error";
 import { DashBoard } from "../../../components/Admin/Dashboard/Dashboard/DashBoard";
+import { useLanguage } from "../../../contexts";
 
 
 
 export function Dashboard() {
   
+  const { language, changeLanguage, translations } = useLanguage();
+  
+  const t = (key) => translations[key] || key ; // Función para obtener la traducción
 
   const panes = [
     {
-      menuItem: 'Overview',
+      menuItem: t("Overview"),
       render: () => <TabPane attached={false}> <Line {...config} /> </TabPane>,
     },
     {
-      menuItem: 'Energia',
+      menuItem: t("energy"),
       render: () => <TabPane attached={false}><Pie {...config2} /></TabPane>,
     },
     {
@@ -27,23 +31,23 @@ export function Dashboard() {
       render: () => <TabPane attached={false}><Column {...config3} /></TabPane>,
     },
     {
-      menuItem: 'Aguas',
+      menuItem: t("water"),
       render: () => <TabPane attached={false}><Column {...config3} /></TabPane>,
     },
     {
-      menuItem: 'Efluentes',
+      menuItem: t("effluent"),
       render: () => <TabPane attached={false}><Column {...config3} /></TabPane>,
     },
     {
-      menuItem: 'Residuos',
+      menuItem: t("waste"),
       render: () => <TabPane attached={false}><Column {...config3} /></TabPane>,
     },
     {
-      menuItem: 'Peligrosos',
+      menuItem: t("dangerous"),
       render: () => <TabPane attached={false}><Column {...config3} /></TabPane>,
     },
     {
-      menuItem: 'Social',
+      menuItem: t("social"),
       render: () => <TabPane attached={false}><Column {...config3} /></TabPane>,
     },
   ]

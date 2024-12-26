@@ -26,7 +26,8 @@ const SiteFormSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   product_category:  {
     value:String,
@@ -39,7 +40,8 @@ const SiteFormSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   days_month: {
     value:Number,
@@ -52,7 +54,8 @@ const SiteFormSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   days_total:{
     value:Number,
@@ -65,7 +68,8 @@ const SiteFormSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   hours_month:{
     value:Number,
@@ -78,7 +82,8 @@ const SiteFormSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   hours_total:{
     value:Number,
@@ -91,7 +96,8 @@ const SiteFormSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   temporary_workers:{
     value:Number,
@@ -104,7 +110,8 @@ const SiteFormSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   permanent_production_workers:{
     value:Number,
@@ -117,7 +124,8 @@ const SiteFormSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   permanent_administrative_workers:{
     value:Number,
@@ -130,7 +138,8 @@ const SiteFormSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   female_production_workers:{
     value:Number,
@@ -155,7 +164,8 @@ const SiteFormSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   female_administrative_workers:{
     value:Number,
@@ -168,7 +178,8 @@ const SiteFormSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   male_administrative_workers:{
     value:Number,
@@ -181,7 +192,8 @@ const SiteFormSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   female_workers_leadership_positions:{
     value:Number,
@@ -194,7 +206,8 @@ const SiteFormSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   male_workers_leadership_positions:{
     value:Number,
@@ -207,7 +220,8 @@ const SiteFormSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   // average_total_workers
   // average_female_workers
@@ -227,7 +241,8 @@ const SiteFormSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   first_aid_without_sick_days:{
     value:Number,
@@ -240,7 +255,8 @@ const SiteFormSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String
+     files:[{
+      url:String, name:String, uniqueName:String}],
   },
   active:Boolean
 });

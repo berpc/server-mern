@@ -1,5 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { Loader, Pagination, Table, Grid, GridColumn, Input, Divider, Confirm, Modal, Dropdown, TableHeaderCell, TableRow } from "semantic-ui-react";
+import {
+  Loader,
+  Pagination,
+  Table,
+  Grid,
+  GridColumn,
+  Input,
+  Divider,
+  Confirm,
+  Modal,
+  Dropdown,
+  TableHeaderCell,
+  TableRow,
+} from "semantic-ui-react";
 import { size, map } from "lodash";
 import { Wasteform } from "../../../../api";
 import { useAuth } from "../../../../hooks";
@@ -13,47 +26,52 @@ import "./ListWasteForms.scss";
 import { BasicModal } from "../../../Shared";
 import { PERIODS } from "../../../../utils";
 import { formatDateView } from "../../../../utils/formatDate";
-import { WasteForm}  from "../WasteForm";
-import { convertPeriodsEngToEsp, convertWasteFieldsEngToEsp } from "../../../../utils/converts";
+import { WasteForm } from "../WasteForm";
+import {
+  convertPeriodsEngToEsp,
+  convertWasteFieldsEngToEsp,
+} from "../../../../utils/converts";
 import { wasteCodes } from "../../../../utils/codes";
+import { useLanguage } from "../../../../contexts";
 const _ = require("lodash");
-
 
 const wasteFormController = new Wasteform();
 
 export function ListWasteForms(props) {
-  const { reload, onReload , siteSelected, yearSelected} = props;
+  const { reload, onReload, siteSelected, yearSelected } = props;
   const [wasteForms, setWasteForms] = useState([]);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState();
-    // const [Role, setRole] = useState(null);
-    const {
-      user: { role, site },
-      accessToken,
-    } = useAuth();
-  
+  // const [Role, setRole] = useState(null);
+  const {
+    user: { role, site },
+    accessToken,
+  } = useAuth();
 
-    useEffect(() => {
-      (async () => {
-        if(yearSelected!=="" && siteSelected!==undefined)
+  const { translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
+
+  useEffect(() => {
+    (async () => {
+      if (yearSelected !== "" && siteSelected !== undefined)
         try {
           const response = await wasteFormController.getWasteFormsBySiteAndYear(
             accessToken,
             siteSelected,
             yearSelected
           );
-          console.log(response)
-          if (response.code ===200) {
+          console.log(response);
+          if (response.code === 200) {
             setWasteForms(response.wasteForms);
           } else {
             setWasteForms([]);
           }
-  
         } catch (error) {
           console.error(error);
         }
-      })();
-    }, [yearSelected,siteSelected, reload]);
+    })();
+  }, [yearSelected, siteSelected, reload]);
 
   const changePage = (_, data) => {
     setPage(data.activePage);
@@ -67,20 +85,20 @@ export function ListWasteForms(props) {
       {/* {map(siteforms, (siteForm) => (
         <SiteFormItem key={siteForm._id} siteForm={siteForm} onReload={onReload} />
       ))} */}
-       <TablePeriods
+      <TablePeriods
         data={wasteForms}
         onReload={onReload}
         accessToken={accessToken}
         year={yearSelected}
         site={siteSelected}
+        t={t}
       />
-      </div>
+    </div>
   );
 }
 
 function TablePeriods(props) {
-
-  const { data, onReload, accessToken , year, site} = props;
+  const { data, onReload, accessToken, year, site, t } = props;
 
   const [showModal, setShowModal] = useState(false);
   const [titleModal, setTitleModal] = useState("");
@@ -89,8 +107,7 @@ function TablePeriods(props) {
   const [dataDeleted, setDataDelete] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const handleConfirm = (e) => setDataDelete(e)
-
+  const handleConfirm = (e) => setDataDelete(e);
 
   // Estado para controlar el modal
   const [selectedPeriod, setSelectedPeriod] = useState(null);
@@ -109,11 +126,9 @@ function TablePeriods(props) {
   const handleDeleteModal = (period) => {
     const form = data.find((item) => item.period === period);
     setConfirmContent(
-      `Eliminar el formulario de residuos con fecha ${formatDateView(
-        form.date
-      )}`
+      `${t("delete_dated_waste_form")} ${formatDateView(form.date)}`
     );
-    setDataDelete(form)
+    setDataDelete(form);
     onOpenCloseConfirm();
   };
 
@@ -121,9 +136,7 @@ function TablePeriods(props) {
     //setFieldName(name);
     const form = data.find((item) => item.period === period);
     setTitleModal(
-      `Actualizar formulario residuo: ${convertPeriodsEngToEsp(form.period)}-${
-        form.year
-      }`
+      `${t("update")} ${t("waste_form")}: ${t(form.period)}-${form.year}`
     );
     setModalContent(
       <WasteForm
@@ -136,9 +149,15 @@ function TablePeriods(props) {
   };
 
   const openNewEffluentForm = (period) => {
-    setTitleModal(`Nuevo Formulario residuos`);
+    setTitleModal(t("new_waste_form"));
     setModalContent(
-      <WasteForm onClose={onOpenCloseModal} onReload={onReload} period={period} year={year} siteSelected={site}/>
+      <WasteForm
+        onClose={onOpenCloseModal}
+        onReload={onReload}
+        period={period}
+        year={year}
+        siteSelected={site}
+      />
     );
     setShowModal(true);
   };
@@ -146,7 +165,10 @@ function TablePeriods(props) {
   const onDelete = async () => {
     try {
       //TODO: modificar por controlador correspondiente
-      await wasteFormController.deleteEffluentForm(accessToken, dataDeleted._id);
+      await wasteFormController.deleteEffluentForm(
+        accessToken,
+        dataDeleted._id
+      );
       setDataDelete("");
       onReload();
       onOpenCloseConfirm();
@@ -179,8 +201,6 @@ function TablePeriods(props) {
     return existsPeriod;
   };
 
-  console.log(hasDataPeriod("April"));
-
   // Obtener todos los campos únicos
   const uniqueFields = determineFields();
 
@@ -196,16 +216,23 @@ function TablePeriods(props) {
       <Table celled structured>
         <Table.Header>
           <Table.Row>
-            <Table.HeaderCell rowSpan='2'  textAlign="center">Codigo</Table.HeaderCell>
-            <Table.HeaderCell rowSpan='2'  textAlign="center">Concepto</Table.HeaderCell>
-            <Table.HeaderCell rowSpan='2'  textAlign="center">Unidades</Table.HeaderCell>
-            <Table.HeaderCell colSpan='14' textAlign="center">PERIODO DE REPORTE {year}</Table.HeaderCell>
-      </Table.Row>
-      <Table.Row>
+            <Table.HeaderCell rowSpan="2" textAlign="center">
+              {t("code")}
+            </Table.HeaderCell>
+            <Table.HeaderCell rowSpan="2" textAlign="center">
+              {t("concept")}
+            </Table.HeaderCell>
+            <Table.HeaderCell rowSpan="2" textAlign="center">
+              {t("units")}
+            </Table.HeaderCell>
+            <Table.HeaderCell colSpan="14" textAlign="center">
+              {t("report_period")} {year}
+            </Table.HeaderCell>
+          </Table.Row>
+          <Table.Row>
             {periods.map((period, index) => (
               <Table.HeaderCell key={index}>
-
-                {convertPeriodsEngToEsp(period)}
+                {t(period)}
                 {hasDataPeriod(period) ? (
                   <>
                     <Dropdown
@@ -214,16 +241,15 @@ function TablePeriods(props) {
                       icon="ellipsis vertical"
                       floating
                       className="icon"
-    
                     >
                       <Dropdown.Menu>
                         <Dropdown.Item
-                          text="Editar"
+                          text={t("edit")}
                           icon="edit"
                           onClick={() => openUpdateEffluentForm(period)}
                         />
                         <Dropdown.Item
-                          text="Eliminar"
+                          text={t("delete")}
                           icon="trash"
                           onClick={() => handleDeleteModal(period)}
                         />
@@ -242,7 +268,7 @@ function TablePeriods(props) {
                     >
                       <Dropdown.Menu>
                         <Dropdown.Item
-                          text="Cargar datos"
+                          text={t("load_data")}
                           icon="plus"
                           onClick={() => openNewEffluentForm(period)}
                         />
@@ -252,8 +278,8 @@ function TablePeriods(props) {
                 )}
               </Table.HeaderCell>
             ))}
-            <Table.HeaderCell>Total</Table.HeaderCell>
-            <Table.HeaderCell>Promedio</Table.HeaderCell>
+            <Table.HeaderCell>{t("total")}</Table.HeaderCell>
+            <Table.HeaderCell>{t("average")}</Table.HeaderCell>
           </Table.Row>
         </Table.Header>
         <Table.Body>
@@ -261,7 +287,7 @@ function TablePeriods(props) {
             <React.Fragment key={field}>
               <Table.Row>
                 <Table.Cell>{wasteCodes[field]}</Table.Cell>
-                <Table.Cell>{convertWasteFieldsEngToEsp(field)}</Table.Cell>
+                <Table.Cell>{t(field)}</Table.Cell>
                 <Table.Cell>{"-"}</Table.Cell>
                 {periods.map((period) => {
                   const item = data.find((d) => d.period === period);
@@ -299,8 +325,9 @@ function TablePeriods(props) {
         onConfirm={onDelete}
         content={confirmContent}
         size="tiny"
-        cancelButton="Cancelar"
-        confirmButton="Aceptar"
+        cancelButton={t("cancel")}
+        confirmButton={t("accept")}
+        header={t("delete")}
       />
     </>
   );

@@ -1,4 +1,4 @@
-import React, { useCallback, useState,useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import {
   Form,
   Image,
@@ -17,7 +17,9 @@ import {
   Modal,
   ModalHeader,
   ModalContent,
-  ModalActions
+  ModalActions,
+  List,
+  Message,
 } from "semantic-ui-react";
 import { useDropzone } from "react-dropzone";
 import { useFormik, Field, FieldArray, FormikProvider, getIn } from "formik";
@@ -34,23 +36,29 @@ import { useNavigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import { decrypt, encrypt } from "../../../../utils/cryptoUtils";
 import "./SiteForm.scss";
-import { convertPeriodsEngToEsp, convertSiteFieldsEngToEsp } from "../../../../utils/converts";
+import { convertPeriodsEngToEsp } from "../../../../utils/converts";
 import { siteCodes } from "../../../../utils/codes";
+import { useLanguage } from "../../../../contexts";
 
 const siteFormController = new Siteform();
 
 export function SiteForm(props) {
-  const { onClose, onReload, siteForm, siteSelected ,period, year} = props;
+  const { onClose, onReload, siteForm, siteSelected, period, year } = props;
   const { accessToken } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [titleModal, setTitleModal] = useState("");
   const [fieldName, setFieldName] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
   const [listPeriods, setListPeriods] = useState([]);
+  const [newFiles, setNewFiles] = useState([]);
   const { user } = useAuth();
 
   const location = useLocation();
   //const { siteSelected } = location.state || {};
+
+  const { translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
 
   if (!siteSelected) {
     // // Manejo de caso donde no hay datos en state (por ejemplo, acceso directo a la URL)
@@ -64,7 +72,7 @@ export function SiteForm(props) {
 
   const openUpdateSite = (data, name) => {
     setFieldName(name);
-    setTitleModal(`Comentarios ${data}`);
+    setTitleModal(`${t("comments")} ${data}`);
     onOpenCloseModal();
   };
 
@@ -91,9 +99,31 @@ export function SiteForm(props) {
             //   }
             // }
           }
+          // Recorrer el JSON
+          for (const clave in newFiles) {
+            if (newFiles.hasOwnProperty(clave)) {
+              let filesField = await uploadFiles(newFiles[clave]);
+
+              // Combina los archivos nuevos con los existentes
+              let finalFilesField = [...formValue[clave].files, ...filesField];
+
+              formValue[clave].files = finalFilesField;
+            }
+          }
           await siteFormController.createSiteForm(accessToken, formValue);
           //console.log(formValue);
         } else {
+          // Recorrer el JSON
+          for (const clave in newFiles) {
+            if (newFiles.hasOwnProperty(clave)) {
+              let filesField = await uploadFiles(newFiles[clave]);
+
+              // Combina los archivos nuevos con los existentes
+              let finalFilesField = [...formValue[clave].files, ...filesField];
+
+              formValue[clave].files = finalFilesField;
+            }
+          }
           await siteFormController.updateSiteForm(
             accessToken,
             siteForm._id,
@@ -113,46 +143,77 @@ export function SiteForm(props) {
     },
   });
 
+  const uploadFiles = async (filesToUpload, formValue, field) => {
+    const formData = new FormData();
+    Array.from(filesToUpload).forEach((file) => {
+      formData.append("files", file);
+    });
+
+    // Luego de preparar los datos, puedes hacer la solicitud POST
+    if (filesToUpload.length === 0) {
+      console.log("no hay archivos");
+      //setErrorMessage("Por favor, selecciona al menos un archivo.");
+      return;
+    }
+
+    try {
+      // Realizar la solicitud POST al backend
+      const response = await siteFormController.uploadFileApi(
+        accessToken,
+        formData
+      );
+      if (response.code && response.code === 200) {
+        return response.files;
+      }
+      return [];
+    } catch (error) {
+      //error
+    }
+  };
+
   const goBack = () => {
     navigate(`/admin/data/siteforms`, {
       state: { siteSelected: siteSelected },
     });
   };
 
-     // Generar una lista de años (por ejemplo, del 2000 al 2024)
-     const currentYear = new Date().getFullYear();
-     const years = Array.from({ length: 50 }, (_, i) => currentYear - i);
+  // Generar una lista de años (por ejemplo, del 2000 al 2024)
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 50 }, (_, i) => currentYear - i);
 
-     useEffect(() => {
-      (async () => {
-        try {
-          const response =
-            await siteFormController.getPeriodsSiteFormsBySiteAndYear(
-              accessToken,
-              siteSelected,
-              formik.values.year
-            );
-            const periods = PERIODS.map((item) => item);
-            const availablePeriods = periods
-              .filter((period) => !response.periods.includes(period))
-              .map((period) => period);
-    
-            setListPeriods(availablePeriods);
-            console.log(availablePeriods)
-        } catch (error) {
-          console.error(error);
-          setListPeriods([]);
-        }
-      })();
-    }, [formik.values.year]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const response =
+          await siteFormController.getPeriodsSiteFormsBySiteAndYear(
+            accessToken,
+            siteSelected,
+            formik.values.year
+          );
+        const periods = PERIODS.map((item) => item);
+        const availablePeriods = periods
+          .filter((period) => !response.periods.includes(period))
+          .map((period) => period);
+
+        setListPeriods(availablePeriods);
+        console.log(availablePeriods);
+      } catch (error) {
+        console.error(error);
+        setListPeriods([]);
+      }
+    })();
+  }, [formik.values.year]);
 
   return (
     <Form className="site-form" onSubmit={formik.handleSubmit}>
       {siteForm ? (
         <Segment>
-          <Header as="h4"> Fecha: {formatDateView(formik.values.date)}</Header>
           <Header as="h4">
-            Usuario creador:{" "}
+            {" "}
+            {t("date")}: {formatDateView(formik.values.date)}
+          </Header>
+          <Header as="h4">
+            {t("creator_user")}:{" "}
             {formik.values.creator_user
               ? formik.values.creator_user.lastname
                 ? formik.values.creator_user.lastname +
@@ -163,14 +224,14 @@ export function SiteForm(props) {
           </Header>
         </Segment>
       ) : null}
-             {!siteForm ? (
+      {!siteForm ? (
         <>
           <Grid columns={2} divided>
             <GridRow>
               <GridColumn>
                 <Form.Dropdown
-                  label="Año"
-                  placeholder="Seleccione"
+                  label={t("year")}
+                  placeholder={t("select")}
                   options={years.map((year) => {
                     return {
                       key: year,
@@ -188,12 +249,12 @@ export function SiteForm(props) {
               </GridColumn>
               <GridColumn>
                 <Form.Dropdown
-                  label="Periodo"
-                  placeholder="Seleccione"
+                  label={t("period")}
+                  placeholder={t("select")}
                   options={listPeriods.map((period) => {
                     return {
                       key: period,
-                      text: convertPeriodsEngToEsp(period),
+                      text: t(period),
                       value: period,
                     };
                   })}
@@ -212,24 +273,27 @@ export function SiteForm(props) {
       <Table size="small" celled>
         <Table.Header>
           <Table.Row>
-            <Table.HeaderCell width="1">Codigo</Table.HeaderCell>
-            <Table.HeaderCell width="6">Concepto</Table.HeaderCell>
-            <Table.HeaderCell width="3">Valor</Table.HeaderCell>
-            <Table.HeaderCell width="2">Estado</Table.HeaderCell>
-            <Table.HeaderCell>Acciones</Table.HeaderCell>
+            <Table.HeaderCell width="1">{t("code")}</Table.HeaderCell>
+            {<Table.HeaderCell width="6">{t("concept")}</Table.HeaderCell>}{" "}
+            <Table.HeaderCell width="2">{t("value")}</Table.HeaderCell>
+            <Table.HeaderCell width="2">{t("state")}</Table.HeaderCell>
+            <Table.HeaderCell>{t("actions")}</Table.HeaderCell>
           </Table.Row>
         </Table.Header>
         <Table.Body>
           <Table.Row>
-            <Table.Cell> <label className="label">
-                {formik.values.installation_type.code}{" "}
-              </label></Table.Cell>
             <Table.Cell>
-              <label className="label">{convertSiteFieldsEngToEsp("installation_type")}</label>
+              {" "}
+              <label className="label">
+                {formik.values.installation_type.code}{" "}
+              </label>
+            </Table.Cell>
+            <Table.Cell>
+              <label className="label">{t("installation_type")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[{ _id: "tipo a", name: "tipo a" }].map((ds) => {
                   return {
                     key: ds._id,
@@ -246,19 +310,24 @@ export function SiteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-
               <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("installation_type.isApproved", data.value)
+                  formik.setFieldValue(
+                    "installation_type.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.installation_type.isApproved}
                 error={formik.errors.installation_type}
@@ -271,26 +340,39 @@ export function SiteForm(props) {
                 type="button"
                 primary
                 onClick={() => {
-                  openUpdateSite(convertSiteFieldsEngToEsp("installation_type"), "installation_type");
+                  openUpdateSite(t("installation_type"), "installation_type");
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"installation_type"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"installation_type"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell> <label className="label">
-                {formik.values.product_category.code}{" "}
-              </label></Table.Cell>
             <Table.Cell>
-              <label className="label">{convertSiteFieldsEngToEsp("product_category")}</label>
+              {" "}
+              <label className="label">
+                {formik.values.product_category.code}{" "}
+              </label>
             </Table.Cell>
             <Table.Cell>
-            <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{_id:"categoria a",name:"categoria a"}, {_id:"categoria b",name:"categoria b"}].map((ds) => {
+              <label className="label">{t("product_category")}</label>
+            </Table.Cell>
+            <Table.Cell>
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { _id: "categoria a", name: "categoria a" },
+                  { _id: "categoria b", name: "categoria b" },
+                ].map((ds) => {
                   return {
                     key: ds._id,
                     text: ds.name,
@@ -307,17 +389,23 @@ export function SiteForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("product_category.isApproved", data.value)
+                  formik.setFieldValue(
+                    "product_category.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.product_category.isApproved}
                 error={formik.errors.product_category}
@@ -330,21 +418,29 @@ export function SiteForm(props) {
                 primary
                 type="button"
                 onClick={() => {
-                  openUpdateSite(convertSiteFieldsEngToEsp("product_category"), "product_category");
+                  openUpdateSite(t("product_category"), "product_category");
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"product_category"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"product_category"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell> <label className="label">
-                {formik.values.days_month.code}{" "}
-              </label></Table.Cell>
             <Table.Cell>
-              <label className="label">{convertSiteFieldsEngToEsp("days_month")}</label>
+              {" "}
+              <label className="label">{formik.values.days_month.code} </label>
+            </Table.Cell>
+            <Table.Cell>
+              <label className="label">{t("days_month")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -357,11 +453,14 @@ export function SiteForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -380,21 +479,29 @@ export function SiteForm(props) {
                 type="button"
                 primary
                 onClick={() => {
-                  openUpdateSite(convertSiteFieldsEngToEsp("days_month"), "days_month");
+                  openUpdateSite(t("days_month"), "days_month");
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"days_month"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"days_month"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell> <label className="label">
-                {formik.values.days_total.code}{" "}
-              </label></Table.Cell>
             <Table.Cell>
-              <label className="label">{convertSiteFieldsEngToEsp("days_total")}</label>
+              {" "}
+              <label className="label">{formik.values.days_total.code} </label>
+            </Table.Cell>
+            <Table.Cell>
+              <label className="label">{t("days_total")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -406,12 +513,15 @@ export function SiteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-                 <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -435,16 +545,24 @@ export function SiteForm(props) {
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"days_total"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"days_total"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell> <label className="label">
-                {formik.values.hours_month.code}{" "}
-              </label></Table.Cell>
             <Table.Cell>
-              <label className="label">{convertSiteFieldsEngToEsp("hours_month")}</label>
+              {" "}
+              <label className="label">{formik.values.hours_month.code} </label>
+            </Table.Cell>
+            <Table.Cell>
+              <label className="label">{t("hours_month")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -456,12 +574,15 @@ export function SiteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-                     <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -480,21 +601,29 @@ export function SiteForm(props) {
                 type="button"
                 primary
                 onClick={() => {
-                  openUpdateSite(convertSiteFieldsEngToEsp("hours_month"), "hours_month");
+                  openUpdateSite(t("hours_month"), "hours_month");
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"hours_month"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"hours_month"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell> <label className="label">
-                {formik.values.hours_total.code}{" "}
-              </label></Table.Cell>
             <Table.Cell>
-              <label className="label">{convertSiteFieldsEngToEsp("hours_total")}</label>
+              {" "}
+              <label className="label">{formik.values.hours_total.code} </label>
+            </Table.Cell>
+            <Table.Cell>
+              <label className="label">{t("hours_total")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -507,12 +636,15 @@ export function SiteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-                         <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -531,23 +663,31 @@ export function SiteForm(props) {
                 type="button"
                 primary
                 onClick={() => {
-                  openUpdateSite( convertSiteFieldsEngToEsp("hours_total"), "hours_total");
+                  openUpdateSite(t("hours_total"), "hours_total");
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"hours_total"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"hours_total"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell> <label className="label">
-                {formik.values.temporary_workers.code}{" "}
-              </label></Table.Cell>
             <Table.Cell>
+              {" "}
               <label className="label">
-              {convertSiteFieldsEngToEsp("temporary_workers")}
+                {formik.values.temporary_workers.code}{" "}
               </label>
+            </Table.Cell>
+            <Table.Cell>
+              <label className="label">{t("temporary_workers")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -571,18 +711,24 @@ export function SiteForm(props) {
                   formik.setFieldValue("temporary_workers.isApproved", checked);
                 }}
               /> */}
-                           <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("temporary_workers.isApproved", data.value)
+                  formik.setFieldValue(
+                    "temporary_workers.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.temporary_workers.isApproved}
                 error={formik.errors.temporary_workers}
@@ -595,25 +741,32 @@ export function SiteForm(props) {
                 type="button"
                 primary
                 onClick={() => {
-                  openUpdateSite(
-                    convertSiteFieldsEngToEsp("temporary_workers"),
-                    "temporary_workers"
-                  );
+                  openUpdateSite(t("temporary_workers"), "temporary_workers");
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"temporary_workers"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"temporary_workers"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell> <label className="label">
+            <Table.Cell>
+              {" "}
+              <label className="label">
                 {formik.values.permanent_production_workers.code}{" "}
-              </label></Table.Cell>
+              </label>
+            </Table.Cell>
             <Table.Cell>
               <label className="label">
-                {convertSiteFieldsEngToEsp("permanent_production_workers")}
+                {t("permanent_production_workers")}
               </label>
             </Table.Cell>
             <Table.Cell>
@@ -626,18 +779,24 @@ export function SiteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-                               <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("permanent_production_workers.isApproved", data.value)
+                  formik.setFieldValue(
+                    "permanent_production_workers.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.permanent_production_workers.isApproved}
                 error={formik.errors.permanent_production_workers}
@@ -651,21 +810,31 @@ export function SiteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertSiteFieldsEngToEsp("permanent_production_workers"),
+                    t("permanent_production_workers"),
                     "permanent_production_workers"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"permanent_production_workers"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"permanent_production_workers"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell> <label className="label">
+            <Table.Cell>
+              {" "}
+              <label className="label">
                 {formik.values.permanent_administrative_workers.code}{" "}
-              </label></Table.Cell>
+              </label>
+            </Table.Cell>
             <Table.Cell>
               <label className="label">
                 Cantidad de trabajadores administrativos permanentes
@@ -681,20 +850,28 @@ export function SiteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-                              <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("permanent_administrative_workers.isApproved", data.value)
+                  formik.setFieldValue(
+                    "permanent_administrative_workers.isApproved",
+                    data.value
+                  )
                 }
-                value={formik.values.permanent_administrative_workers.isApproved}
+                value={
+                  formik.values.permanent_administrative_workers.isApproved
+                }
                 error={formik.errors.permanent_administrative_workers}
               />
               {/* {formik.values.permanent_administrative_workers.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
@@ -713,18 +890,26 @@ export function SiteForm(props) {
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"permanent_administrative_workers"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"permanent_administrative_workers"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell> <label className="label">
-                {formik.values.female_production_workers.code}{" "}
-              </label></Table.Cell>
             <Table.Cell>
+              {" "}
               <label className="label">
-                {convertSiteFieldsEngToEsp("female_production_workers")}
+                {formik.values.female_production_workers.code}{" "}
               </label>
+            </Table.Cell>
+            <Table.Cell>
+              <label className="label">{t("female_production_workers")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -736,18 +921,24 @@ export function SiteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-                                 <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("female_production_workers.isApproved", data.value)
+                  formik.setFieldValue(
+                    "female_production_workers.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.female_production_workers.isApproved}
                 error={formik.errors.female_production_workers}
@@ -761,25 +952,33 @@ export function SiteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertSiteFieldsEngToEsp("female_production_workers"),
+                    t("female_production_workers"),
                     "female_production_workers"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"female_production_workers"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"female_production_workers"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell> <label className="label">
-                {formik.values.male_production_workers.code}{" "}
-              </label></Table.Cell>
             <Table.Cell>
+              {" "}
               <label className="label">
-                {convertSiteFieldsEngToEsp("male_production_workers")}
+                {formik.values.male_production_workers.code}{" "}
               </label>
+            </Table.Cell>
+            <Table.Cell>
+              <label className="label">{t("male_production_workers")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -791,18 +990,24 @@ export function SiteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-                                    <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("male_production_workers.isApproved", data.value)
+                  formik.setFieldValue(
+                    "male_production_workers.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.male_production_workers.isApproved}
                 error={formik.errors.male_production_workers}
@@ -816,24 +1021,34 @@ export function SiteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertSiteFieldsEngToEsp("male_production_workers"),
+                    t("male_production_workers"),
                     "male_production_workers"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"male_production_workers"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"male_production_workers"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell> <label className="label">
+            <Table.Cell>
+              {" "}
+              <label className="label">
                 {formik.values.female_administrative_workers.code}{" "}
-              </label></Table.Cell>
+              </label>
+            </Table.Cell>
             <Table.Cell>
               <label className="label">
-                {convertSiteFieldsEngToEsp("female_administrative_workers")}
+                {t("female_administrative_workers")}
               </label>
             </Table.Cell>
             <Table.Cell>
@@ -846,18 +1061,24 @@ export function SiteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-                                        <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("female_administrative_workers.isApproved", data.value)
+                  formik.setFieldValue(
+                    "female_administrative_workers.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.female_administrative_workers.isApproved}
                 error={formik.errors.female_administrative_workers}
@@ -871,24 +1092,34 @@ export function SiteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertSiteFieldsEngToEsp("female_administrative_workers"),
+                    t("female_administrative_workers"),
                     "female_administrative_workers"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"female_administrative_workers"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"female_administrative_workers"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell> <label className="label">
+            <Table.Cell>
+              {" "}
+              <label className="label">
                 {formik.values.male_administrative_workers.code}{" "}
-              </label></Table.Cell>
+              </label>
+            </Table.Cell>
             <Table.Cell>
               <label className="label">
-                {convertSiteFieldsEngToEsp("male_administrative_workers")}
+                {t("male_administrative_workers")}
               </label>
             </Table.Cell>
             <Table.Cell>
@@ -901,18 +1132,24 @@ export function SiteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-                                          <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("male_administrative_workers.isApproved", data.value)
+                  formik.setFieldValue(
+                    "male_administrative_workers.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.male_administrative_workers.isApproved}
                 error={formik.errors.male_administrative_workers}
@@ -926,24 +1163,34 @@ export function SiteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertSiteFieldsEngToEsp("male_administrative_workers"),
+                    t("male_administrative_workers"),
                     "male_administrative_workers"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"male_administrative_workers"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"male_administrative_workers"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell> <label className="label">
+            <Table.Cell>
+              {" "}
+              <label className="label">
                 {formik.values.female_workers_leadership_positions.code}{" "}
-              </label></Table.Cell>
+              </label>
+            </Table.Cell>
             <Table.Cell>
               <label className="label">
-              {convertSiteFieldsEngToEsp("female_workers_leadership_positions")}
+                {t("female_workers_leadership_positions")}
               </label>
             </Table.Cell>
             <Table.Cell>
@@ -956,20 +1203,28 @@ export function SiteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-                                       <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("female_workers_leadership_positions.isApproved", data.value)
+                  formik.setFieldValue(
+                    "female_workers_leadership_positions.isApproved",
+                    data.value
+                  )
                 }
-                value={formik.values.female_workers_leadership_positions.isApproved}
+                value={
+                  formik.values.female_workers_leadership_positions.isApproved
+                }
                 error={formik.errors.female_workers_leadership_positions}
               />
               {/* {formik.values.female_workers_leadership_positions.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
@@ -981,24 +1236,34 @@ export function SiteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertSiteFieldsEngToEsp("female_workers_leadership_positions"),
+                    t("female_workers_leadership_positions"),
                     "female_workers_leadership_positions"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"female_workers_leadership_positions"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"female_workers_leadership_positions"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell> <label className="label">
+            <Table.Cell>
+              {" "}
+              <label className="label">
                 {formik.values.male_workers_leadership_positions.code}{" "}
-              </label></Table.Cell>
+              </label>
+            </Table.Cell>
             <Table.Cell>
               <label className="label">
-                {convertSiteFieldsEngToEsp("male_workers_leadership_positions")}
+                {t("male_workers_leadership_positions")}
               </label>
             </Table.Cell>
             <Table.Cell>
@@ -1012,19 +1277,27 @@ export function SiteForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("male_workers_leadership_positions.isApproved", data.value)
+                  formik.setFieldValue(
+                    "male_workers_leadership_positions.isApproved",
+                    data.value
+                  )
                 }
-                value={formik.values.male_workers_leadership_positions.isApproved}
+                value={
+                  formik.values.male_workers_leadership_positions.isApproved
+                }
                 error={formik.errors.male_workers_leadership_positions}
               />
               {/* {formik.values.male_workers_leadership_positions.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
@@ -1036,25 +1309,33 @@ export function SiteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertSiteFieldsEngToEsp("male_workers_leadership_positions"),
+                    t("male_workers_leadership_positions"),
                     "male_workers_leadership_positions"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"male_workers_leadership_positions"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"male_workers_leadership_positions"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell> <label className="label">
-                {formik.values.average_total_workers.code}{" "}
-              </label></Table.Cell>
             <Table.Cell>
+              {" "}
               <label className="label">
-                {convertSiteFieldsEngToEsp("average_total_workers")}
+                {formik.values.average_total_workers.code}{" "}
               </label>
+            </Table.Cell>
+            <Table.Cell>
+              <label className="label">{t("average_total_workers")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1067,17 +1348,23 @@ export function SiteForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("average_total_workers.isApproved", data.value)
+                  formik.setFieldValue(
+                    "average_total_workers.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.average_total_workers.isApproved}
                 error={formik.errors.average_total_workers}
@@ -1091,25 +1378,33 @@ export function SiteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertSiteFieldsEngToEsp("average_total_workers"),
+                    t("average_total_workers"),
                     "average_total_workers"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"average_total_workers"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"average_total_workers"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell> <label className="label">
-                {formik.values.average_female_workers.code}{" "}
-              </label></Table.Cell>
             <Table.Cell>
+              {" "}
               <label className="label">
-                {convertSiteFieldsEngToEsp("average_female_workers")}
+                {formik.values.average_female_workers.code}{" "}
               </label>
+            </Table.Cell>
+            <Table.Cell>
+              <label className="label">{t("average_female_workers")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1121,18 +1416,24 @@ export function SiteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-               <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("average_female_workers.isApproved", data.value)
+                  formik.setFieldValue(
+                    "average_female_workers.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.average_female_workers.isApproved}
                 error={formik.errors.average_female_workers}
@@ -1146,25 +1447,33 @@ export function SiteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertSiteFieldsEngToEsp("average_female_workers"),
+                    t("average_female_workers"),
                     "average_female_workers"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"average_female_workers"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"average_female_workers"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell> <label className="label">
-                {formik.values.average_male_workers.code}{" "}
-              </label></Table.Cell>
             <Table.Cell>
+              {" "}
               <label className="label">
-                {convertSiteFieldsEngToEsp("average_male_workers")}
+                {formik.values.average_male_workers.code}{" "}
               </label>
+            </Table.Cell>
+            <Table.Cell>
+              <label className="label">{t("average_male_workers")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1176,18 +1485,24 @@ export function SiteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-                     <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("average_male_workers.isApproved", data.value)
+                  formik.setFieldValue(
+                    "average_male_workers.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.average_male_workers.isApproved}
                 error={formik.errors.average_male_workers}
@@ -1201,23 +1516,33 @@ export function SiteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertSiteFieldsEngToEsp("average_male_workers"),
+                    t("average_male_workers"),
                     "average_male_workers"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"average_male_workers"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"average_male_workers"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell> <label className="label">
-                {formik.values.percentage_female_workers.code}{" "}
-              </label></Table.Cell>
             <Table.Cell>
-              <label className="label">{convertSiteFieldsEngToEsp("percentage_female_workers")}</label>
+              {" "}
+              <label className="label">
+                {formik.values.percentage_female_workers.code}{" "}
+              </label>
+            </Table.Cell>
+            <Table.Cell>
+              <label className="label">{t("percentage_female_workers")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1230,17 +1555,23 @@ export function SiteForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("percentage_female_workers.isApproved", data.value)
+                  formik.setFieldValue(
+                    "percentage_female_workers.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.percentage_female_workers.isApproved}
                 error={formik.errors.percentage_female_workers}
@@ -1254,23 +1585,33 @@ export function SiteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertSiteFieldsEngToEsp("percentage_female_workers"),
+                    t("percentage_female_workers"),
                     "percentage_female_workers"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"percentage_female_workers"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"percentage_female_workers"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell> <label className="label">
-                {formik.values.percentage_male_workers.code}{" "}
-              </label></Table.Cell>
             <Table.Cell>
-              <label className="label"> {convertSiteFieldsEngToEsp("percentage_male_workers")}</label>
+              {" "}
+              <label className="label">
+                {formik.values.percentage_male_workers.code}{" "}
+              </label>
+            </Table.Cell>
+            <Table.Cell>
+              <label className="label"> {t("percentage_male_workers")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1282,18 +1623,24 @@ export function SiteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-               <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("percentage_male_workers.isApproved", data.value)
+                  formik.setFieldValue(
+                    "percentage_male_workers.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.percentage_male_workers.isApproved}
                 error={formik.errors.percentage_male_workers}
@@ -1307,23 +1654,33 @@ export function SiteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertSiteFieldsEngToEsp("percentage_male_workers"),
+                    t("percentage_male_workers"),
                     "percentage_male_workers"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"percentage_male_workers"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"percentage_male_workers"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell> <label className="label">
-                {formik.values.percentage_total_female.code}{" "}
-              </label></Table.Cell>
             <Table.Cell>
-              <label className="label">{convertSiteFieldsEngToEsp("percentage_total_female")}</label>
+              {" "}
+              <label className="label">
+                {formik.values.percentage_total_female.code}{" "}
+              </label>
+            </Table.Cell>
+            <Table.Cell>
+              <label className="label">{t("percentage_total_female")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1335,18 +1692,24 @@ export function SiteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-               <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("percentage_total_female.isApproved", data.value)
+                  formik.setFieldValue(
+                    "percentage_total_female.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.percentage_total_female.isApproved}
                 error={formik.errors.percentage_total_female}
@@ -1360,23 +1723,33 @@ export function SiteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertSiteFieldsEngToEsp("percentage_total_female"),
+                    t("percentage_total_female"),
                     "percentage_total_female"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"percentage_total_female"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"percentage_total_female"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell> <label className="label">
-                {formik.values.percentage_total_male.code}{" "}
-              </label></Table.Cell>
             <Table.Cell>
-              <label className="label">{convertSiteFieldsEngToEsp("percentage_total_male")}</label>
+              {" "}
+              <label className="label">
+                {formik.values.percentage_total_male.code}{" "}
+              </label>
+            </Table.Cell>
+            <Table.Cell>
+              <label className="label">{t("percentage_total_male")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1388,18 +1761,24 @@ export function SiteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-                    <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("percentage_total_male.isApproved", data.value)
+                  formik.setFieldValue(
+                    "percentage_total_male.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.percentage_total_male.isApproved}
                 error={formik.errors.percentage_total_male}
@@ -1413,24 +1792,34 @@ export function SiteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertSiteFieldsEngToEsp("percentage_total_male"),
+                    t("percentage_total_male"),
                     "percentage_total_male"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"percentage_total_male"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"percentage_total_male"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell> <label className="label">
+            <Table.Cell>
+              {" "}
+              <label className="label">
                 {formik.values.percentage_female_leadership_positions.code}{" "}
-              </label></Table.Cell>
+              </label>
+            </Table.Cell>
             <Table.Cell>
               <label className="label">
-                {convertSiteFieldsEngToEsp("percentage_female_leadership_positions")}
+                {t("percentage_female_leadership_positions")}
               </label>
             </Table.Cell>
             <Table.Cell>
@@ -1445,20 +1834,29 @@ export function SiteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-                         <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("percentage_female_leadership_positions.isApproved", data.value)
+                  formik.setFieldValue(
+                    "percentage_female_leadership_positions.isApproved",
+                    data.value
+                  )
                 }
-                value={formik.values.percentage_female_leadership_positions.isApproved}
+                value={
+                  formik.values.percentage_female_leadership_positions
+                    .isApproved
+                }
                 error={formik.errors.percentage_female_leadership_positions}
               />
               {/* {formik.values.percentage_female_leadership_positions.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
@@ -1470,21 +1868,31 @@ export function SiteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertSiteFieldsEngToEsp("percentage_female_leadership_positions"),
+                    t("percentage_female_leadership_positions"),
                     "percentage_female_leadership_positions"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"percentage_female_leadership_positions"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"percentage_female_leadership_positions"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell> <label className="label">
+            <Table.Cell>
+              {" "}
+              <label className="label">
                 {formik.values.percentage_male_leadership_positions.code}{" "}
-              </label></Table.Cell>
+              </label>
+            </Table.Cell>
             <Table.Cell>
               <label className="label">
                 % de masculinos en posicion de liderazgo
@@ -1500,20 +1908,28 @@ export function SiteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-                             <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("percentage_male_leadership_positions.isApproved", data.value)
+                  formik.setFieldValue(
+                    "percentage_male_leadership_positions.isApproved",
+                    data.value
+                  )
                 }
-                value={formik.values.percentage_male_leadership_positions.isApproved}
+                value={
+                  formik.values.percentage_male_leadership_positions.isApproved
+                }
                 error={formik.errors.percentage_male_leadership_positions}
               />
               {/* {formik.values.percentage_male_leadership_positions.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
@@ -1532,17 +1948,27 @@ export function SiteForm(props) {
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"percentage_male_leadership_positions"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"percentage_male_leadership_positions"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell> <label className="label">
+            <Table.Cell>
+              {" "}
+              <label className="label">
                 {formik.values.work_accidents_with_sick_days.code}{" "}
-              </label></Table.Cell>
+              </label>
+            </Table.Cell>
             <Table.Cell>
               <label className="label">
-              {convertSiteFieldsEngToEsp("work_accidents_with_sick_days")}
+                {t("work_accidents_with_sick_days")}
               </label>
             </Table.Cell>
             <Table.Cell>
@@ -1555,18 +1981,24 @@ export function SiteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-                            <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("work_accidents_with_sick_days.isApproved", data.value)
+                  formik.setFieldValue(
+                    "work_accidents_with_sick_days.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.work_accidents_with_sick_days.isApproved}
                 error={formik.errors.work_accidents_with_sick_days}
@@ -1580,24 +2012,34 @@ export function SiteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertSiteFieldsEngToEsp("work_accidents_with_sick_days"),
+                    t("work_accidents_with_sick_days"),
                     "work_accidents_with_sick_days"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"work_accidents_with_sick_days"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"work_accidents_with_sick_days"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell> <label className="label">
+            <Table.Cell>
+              {" "}
+              <label className="label">
                 {formik.values.first_aid_without_sick_days.code}{" "}
-              </label></Table.Cell>
+              </label>
+            </Table.Cell>
             <Table.Cell>
               <label className="label">
-              {convertSiteFieldsEngToEsp("first_aid_without_sick_days")}
+                {t("first_aid_without_sick_days")}
               </label>
             </Table.Cell>
             <Table.Cell>
@@ -1610,18 +2052,24 @@ export function SiteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-                        <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("first_aid_without_sick_days.isApproved", data.value)
+                  formik.setFieldValue(
+                    "first_aid_without_sick_days.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.first_aid_without_sick_days.isApproved}
                 error={formik.errors.first_aid_without_sick_days}
@@ -1635,14 +2083,21 @@ export function SiteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertSiteFieldsEngToEsp("first_aid_without_sick_days"),
+                    t("first_aid_without_sick_days"),
                     "first_aid_without_sick_days"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"first_aid_without_sick_days"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"first_aid_without_sick_days"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
         </Table.Body>
@@ -1661,7 +2116,6 @@ export function SiteForm(props) {
         </TableHeaderCell>
       </TableRow>
     </TableFooter> */}
-
       </Table>
 
       <BasicModal show={showModal} close={onOpenCloseModal} title={titleModal}>
@@ -1672,11 +2126,12 @@ export function SiteForm(props) {
           onReload={onReload}
           siteForm={siteForm}
           user={user}
+          t={t}
         />
       </BasicModal>
       <Form.Group widths="2">
         <Form.Button type="submit" fluid primary loading={formik.isSubmitting}>
-          {!siteForm ? "Guardar" : "Actualizar datos"}
+          {!siteForm ? t("save") : t("update")}
         </Form.Button>
         <Form.Button
           type="button"
@@ -1687,7 +2142,7 @@ export function SiteForm(props) {
             onClose ? onClose() : goBack();
           }}
         >
-          {"Cancelar"}
+          {t("cancel")}
         </Form.Button>
       </Form.Group>
     </Form>
@@ -1695,7 +2150,7 @@ export function SiteForm(props) {
 }
 
 function Comments(props) {
-  const { formik, user, fieldName, onClose } = props;
+  const { formik, user, fieldName, onClose, t } = props;
   const [comment, setComment] = useState("");
   console.log(user);
 
@@ -1747,6 +2202,7 @@ function Comments(props) {
                         : false
                       : false
                   }
+                  t={t}
                 />
                 <Divider fitted />
               </>
@@ -1765,7 +2221,7 @@ function Comments(props) {
         <Form.Button
           type="button"
           icon="edit"
-          content={"Añadir comentario"}
+          content={t("add_comment")}
           primary
           fluid
           onClick={onChangeHandle}
@@ -1775,7 +2231,7 @@ function Comments(props) {
   );
 }
 
-const EditableComment = ({ id, author, date, content, onSave, active }) => {
+const EditableComment = ({ id, author, date, content, onSave, active, t }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(content);
 
@@ -1809,8 +2265,8 @@ const EditableComment = ({ id, author, date, content, onSave, active }) => {
           {isEditing ? (
             <Form reply>
               <Form.TextArea value={editedContent} onChange={handleChange} />
-              <Button content="Guardar" onClick={handleSave} primary />
-              <Button content="Cancelar" onClick={handleCancel} secondary />
+              <Button content={t("save")} onClick={handleSave} primary />
+              <Button content={t("cancel")} onClick={handleCancel} secondary />
             </Form>
           ) : (
             <div>{editedContent}</div>
@@ -1818,7 +2274,7 @@ const EditableComment = ({ id, author, date, content, onSave, active }) => {
         </Comment.Text>
         {active ? (
           <Comment.Actions>
-            <Comment.Action onClick={handleEdit}>Editar</Comment.Action>
+            <Comment.Action onClick={handleEdit}>{t("edit")}</Comment.Action>
           </Comment.Actions>
         ) : null}
       </Comment.Content>
@@ -1826,93 +2282,9 @@ const EditableComment = ({ id, author, date, content, onSave, active }) => {
   );
 };
 
-function FileUpload (props) {
-  const {accessToken, data, field}=props;
-  const [file, setFile] = useState(null);
-  const [fileName, setFileName] = useState(null);
-  const [message, setMessage] = useState('');
-
-  const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf',  
-    //'application/vnd.ms-excel', // .xls
-    //'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' // .xlsx
-    ];
-
-  useEffect(() => {
-    if (data.values[field] && data.values[field].file!==null) {
-     setFileName(data.values[field].file);
-    }
-  }, [field]);
-
-   const handleFileChange = async (event) => {
-    const file = event.target.files[0];
-    
-    if (file) {
-      if (!allowedTypes.includes(file.type)) {
-        console.log('Tipo de archivo no permitido. Debe ser JPG, PNG o PDF.');
-      } else {
-      setMessage(`Archivo seleccionado: ${file.name}`);
-
-      const formData = new FormData();
-      formData.append('file', file);
-
-      try {
-        const response = await siteFormController.uploadFileApi(accessToken,formData);
-        setMessage(response.msg);
-        if(response.status && response.status===200){
-          setFile(file);
-          setFileName(file.name);
-          data.setFieldValue(`${field}.file`, file.name)
-        }
-      } catch (error) {
-        setMessage('Error al subir el archivo');
-      }
-    }
-    }
-  };
-
-  const handleButtonClick = (event) => {
-    event.preventDefault(); // Evita que el formulario se envíe
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.onchange = handleFileChange;
-    input.click();
-  };
-
-  const handleRemoveFile = async () => {
-    setFile(null); // Elimina el archivo
-    setFileName(null);
-    try {
-      const response = await siteFormController.deleteFileApi(accessToken,fileName);
-      setMessage(response.message);
-      removeFile();
-    } catch (error) {
-      setMessage('Error al elimianr el archivo');
-    }
-  };
-
-  const removeFile = async () => {
-    data.setFieldValue(`${field}.file`, null)
-  };
-
-  return (
-    <>
-     
-      {fileName? (
-        <>
-          {/* <p>{file.name}</p> */}
-          <FileViewer fileName={fileName} handleRemove={handleRemoveFile}/>
-        </>
-      ):  <Button icon onClick={handleButtonClick}>
-                   <Icon name="paperclip" />
-    </Button>}
-    </>
-  );
-
-};
-
-function FileViewer (props){
-  const {fileName, handleRemove}=props;
-  const [fileUrl, setFileUrl] = useState('');
+function FileViewer(props) {
+  const { fileName, fileUniqueName, handleRemove, t } = props;
+  const [fileUrl, setFileUrl] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
 
   useEffect(() => {
@@ -1920,19 +2292,19 @@ function FileViewer (props){
       setFileUrl(fileName); // Construye la URL del archivo
       (async () => {
         try {
-          const response = await siteFormController.getFileApi(fileName);
+          const response = await siteFormController.getFileApi(fileUniqueName);
           setFileUrl(response); // Construye la URL del archivo
+          console.log(setFileUrl);
           //setMessage(response.message);
         } catch (error) {
           //setMessage('Error al elimianr el archivo');
         }
-          })();
-    
+      })();
     }
   }, [fileName]);
 
   const handleOpenPreview = (event) => {
-    event.preventDefault(); 
+    event.preventDefault();
     setPreviewOpen(true);
   };
 
@@ -1940,36 +2312,192 @@ function FileViewer (props){
     event.preventDefault(); // Previene el comportamiento predeterminado
     setPreviewOpen(false);
   };
-  console.log(fileUrl)
 
   return (
     <>
+      <List.Content floated="left">{fileName}</List.Content>
+      <List.Content floated="right">
+        {" "}
+        <Button
+          color="red"
+          onClick={() => handleRemove(fileUniqueName)}
+          icon="trash alternate"
+        />
+      </List.Content>
       {/* //<Button onClick={handleOpenPreview}> {fileName}</Button> */}
-       
-    <Modal
-      onClose={ handleClosePreview}
-      onOpen={handleOpenPreview}
-      open={previewOpen}
-      trigger={<Button primary icon><Icon name="file alternate"/></Button>}
-    >
-      <ModalHeader>{fileName}</ModalHeader>
-      <ModalContent>
-        {fileName && (fileName.endsWith('.jpg') || fileName.endsWith('.png') || fileName.endsWith('.jpeg')) && (
-            <Image src={fileUrl} alt="Vista previa" style={{ maxWidth: '100%' }} />
-          )}
-          {fileName && fileName.endsWith('.pdf') && (
-            <iframe src={fileUrl} title="Vista previa" style={{ width: '100%', height: '500px' }} />
-          )}
-      </ModalContent>
-      <ModalActions>
-      <Button color="red" onClick={handleRemove}>
-          <Icon disabled name='trash alternate' /> Eliminar
-          </Button>
-        <Button color='black' onClick={handleClosePreview}>
-        <Icon disabled name='close' />Cerrar
-        </Button>
-      </ModalActions>
-    </Modal>
+      <List.Content floated="right">
+        <Modal
+          onClose={handleClosePreview}
+          onOpen={handleOpenPreview}
+          open={previewOpen}
+          trigger={
+            <Button primary icon>
+              <Icon name="eye" />
+            </Button>
+          }
+        >
+          <ModalHeader>{fileName}</ModalHeader>
+          <ModalContent>
+            {fileName &&
+              (fileName.endsWith(".jpg") ||
+                fileName.endsWith(".png") ||
+                fileName.endsWith(".jpeg")) && (
+                <Image
+                  src={fileUrl}
+                  alt="Vista previa"
+                  style={{ maxWidth: "100%" }}
+                />
+              )}
+            {fileName && fileName.endsWith(".pdf") && (
+              <iframe
+                src={fileUrl}
+                title={t("preview")}
+                style={{ width: "100%", height: "500px" }}
+              />
+            )}
+          </ModalContent>
+          <ModalActions>
+            {/* <Button color="red" onClick={() => handleRemove(fileName)}>
+            <Icon disabled name="trash alternate" /> Eliminar
+          </Button> */}
+            <Button color="black" onClick={handleClosePreview}>
+              <Icon disabled name="close" />
+              {t("close")}
+            </Button>
+          </ModalActions>
+        </Modal>
+      </List.Content>
     </>
   );
-};
+}
+
+function FileUpload(props) {
+  const { accessToken, data, field, newFiles, setNewFiles, t } = props;
+  const [files, setFiles] = useState([]);
+  const [filesView, setFilesView] = useState([]);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [openModal, setOpenModal] = useState(false); // Para controlar el estado del modal
+
+  useEffect(() => {
+    if (data.values[field].files) {
+      setFilesView(data.values[field].files); // Construye la URL del archivo
+    }
+  }, [data]);
+
+  const handleButtonClick = (event) => {
+    event.preventDefault(); // Evita que el formulario se envíe
+    const input = document.createElement("input");
+    input.type = "file";
+    input.multiple = true;
+    input.onchange = handleFileChange;
+    input.click();
+  };
+
+  // Maneja el cambio cuando se seleccionan archivos
+  const handleFileChange = async (e) => {
+    e.preventDefault(); // Evita que el formulario se envíe
+    const selectedFiles = e.target.files;
+    setNewFiles({ ...newFiles, [field]: Array.from(selectedFiles) });
+    //data.setFieldValue(`${field}.files`,Array.from(selectedFiles))
+    setFiles([...selectedFiles]);
+  };
+
+  // Función para cerrar el modal
+  const closeModal = (event) => {
+    event.preventDefault();
+    setOpenModal(!openModal);
+  };
+
+  const handleRemoveFile = async (file) => {
+    try {
+      const updatedFiles = filesView.filter((f) => f.uniqueName !== file);
+      setFilesView(updatedFiles);
+      const response = await siteFormController.deleteFileApi(
+        accessToken,
+        file
+      );
+      //setMessage(response.message);
+      removeFile(updatedFiles);
+    } catch (error) {
+      // setMessage('Error al elimianr el archivo');
+    }
+  };
+
+  const removeFile = async (updatedFiles) => {
+    data.setFieldValue(`${field}.files`, updatedFiles);
+  };
+
+  return (
+    <>
+      {/* Input para seleccionar los archivos */}
+      {/* <Input
+        type="file"
+        multiple
+        icon={"paperclip"}
+        onChange={handleFileUpload}
+      /> */}
+
+      <Button
+        default
+        onClick={handleButtonClick}
+        icon="paperclip"
+        style={{ marginTop: "10px" }}
+        color={files.length > 0 ? "green" : "grey"}
+      ></Button>
+
+      {/* Mensajes de éxito o error */}
+      {successMessage && (
+        <Message success>
+          <Message.Header>Éxito</Message.Header>
+          <p>{successMessage}</p>
+        </Message>
+      )}
+
+      {errorMessage && (
+        <Message error>
+          <Message.Header>Error</Message.Header>
+          <p>{errorMessage}</p>
+        </Message>
+      )}
+
+      <Button
+        primary
+        onClick={closeModal}
+        style={{ marginTop: "10px" }}
+        icon="eye"
+      ></Button>
+      {/* Modal para mostrar los archivos subidos */}
+      <Modal open={openModal} onClose={closeModal} size="tiny">
+        <Modal.Header>Archivos subidos</Modal.Header>
+        <Modal.Content>
+          {filesView.length > 0 ? (
+            <List divided>
+              {filesView.map((filePath, index) => (
+                <List.Item key={index}>
+                  {/* <a href={`/${filePath.url}`} target="_blank" rel="noopener noreferrer">
+                      {filePath.url}
+                    </a> */}
+
+                  <FileViewer
+                    fileName={filePath.name}
+                    fileUniqueName={filePath.uniqueName}
+                    handleRemove={handleRemoveFile}
+                    t={t}
+                  />
+                </List.Item>
+              ))}
+            </List>
+          ) : (
+            <p>No se encontraron archivos subidos.</p>
+          )}
+        </Modal.Content>
+        <Modal.Actions>
+          <Button color="green" onClick={closeModal}>
+            {t("close")}
+          </Button>
+        </Modal.Actions>
+      </Modal>
+    </>
+  );
+}

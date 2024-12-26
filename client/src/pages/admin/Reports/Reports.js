@@ -4,6 +4,7 @@ import { BasicModal } from "../../../components/Shared";
 import { ListPost, PostForm } from "../../../components/Admin/Post";
 import { ViewReports } from "../../../components/Admin/Reports/ViewReports/ViewReports";
 import "./Reports.scss";
+import { useLanguage } from "../../../contexts";
 
 export function Reports() {
   const [showModal, setShowModal] = useState(false);
@@ -11,6 +12,10 @@ export function Reports() {
 
   const onOpenCloseModal = () => setShowModal((prevState) => !prevState);
   const onReload = () => setReload((prevState) => !prevState);
+
+  const { translations } = useLanguage();
+    
+    const t = (key) => translations[key] || key ; // Función para obtener la traducción
 
   const panes = [
     {
@@ -26,7 +31,7 @@ export function Reports() {
     <>
        <Segment textAlign="center">
           {" "}
-          <Header as="h1">REPORTES</Header>
+          <Header as="h1">{t("REPORTS")}</Header>
         </Segment>
     <ViewReports/>
       {/* <div className="blog-page">

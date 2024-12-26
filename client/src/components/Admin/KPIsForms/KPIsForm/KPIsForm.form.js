@@ -20,7 +20,7 @@ export function initialValues(form, period, year) {
         value: 0,
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
       total_electrical_energy_consumption:
         form?.total_electrical_energy_consumption || {
@@ -29,7 +29,7 @@ export function initialValues(form, period, year) {
           value: 0,
           reviews: [],
           isApproved: false,
-          file: null,
+          files:[],
         },
       total_energy_consumption: form?.total_energy_consumption || {
         code: kpisCodes["total_energy_consumption"],
@@ -37,7 +37,7 @@ export function initialValues(form, period, year) {
         value: 0,
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
       total_renewable_energy: form?.total_renewable_energy || {
         code: kpisCodes["total_renewable_energy"],
@@ -45,7 +45,7 @@ export function initialValues(form, period, year) {
         value: 0,
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
       percentage_of_renewable_energy: form?.percentage_of_renewable_energy || {
         code: kpisCodes["percentage_of_renewable_energy"],
@@ -53,7 +53,7 @@ export function initialValues(form, period, year) {
         value: "",
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
       percentage_energy_from_fossil_fuels:
         form?.percentage_energy_from_fossil_fuels || {
@@ -62,7 +62,7 @@ export function initialValues(form, period, year) {
           value: "",
           reviews: [],
           isApproved: false,
-          file: null,
+          files:[],
         },
       total_energy_consumed_per_productive_unit:
         form?.total_energy_consumed_per_productive_unit || {
@@ -71,7 +71,7 @@ export function initialValues(form, period, year) {
           value: 0,
           reviews: [],
           isApproved: false,
-          file: null,
+          files:[],
         },
       total_cost_of_energy_consumed: form?.total_cost_of_energy_consumed || {
         code: kpisCodes["total_cost_of_energy_consumed"],
@@ -79,7 +79,7 @@ export function initialValues(form, period, year) {
         value: 0,
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
     },
     greenhouse_gas_indicators: form?.greenhouse_gas_indicators || {
@@ -89,7 +89,7 @@ export function initialValues(form, period, year) {
         value: 0,
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
       total_scope_2: form?.total_scope_2 || {
         code: kpisCodes["total_scope_2"],
@@ -97,7 +97,7 @@ export function initialValues(form, period, year) {
         value: 0,
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
       total_scope_3: form?.total_scope_3 || {
         code: kpisCodes["total_scope_3"],
@@ -105,7 +105,7 @@ export function initialValues(form, period, year) {
         value: 0,
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
       total_emissions_per_unit_produced:
         form?.total_emissions_per_unit_produced || {
@@ -114,7 +114,7 @@ export function initialValues(form, period, year) {
           value: 0,
           reviews: [],
           isApproved: false,
-          file: null,
+          files:[],
         },
       total_emissions: form?.total_emissions || {
         code: kpisCodes["total_emissions"],
@@ -122,7 +122,7 @@ export function initialValues(form, period, year) {
         value: "",
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
       scope_percentage_1: form?.scope_percentage_1 || {
         code: kpisCodes["scope_percentage_1"],
@@ -130,7 +130,7 @@ export function initialValues(form, period, year) {
         value: "",
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
       scope_percentage_2: form?.scope_percentage_2 || {
         code: kpisCodes["scope_percentage_2"],
@@ -138,7 +138,7 @@ export function initialValues(form, period, year) {
         value: 0,
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
       scope_percentage_3: form?.scope_percentage_3 || {
         code: kpisCodes["scope_percentage_3"],
@@ -146,7 +146,7 @@ export function initialValues(form, period, year) {
         value: 0,
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
     },
   };

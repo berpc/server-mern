@@ -61,7 +61,7 @@ export function RoleItem(props) {
   const onOpenCloseConfirm = () => setShowConfirm((prevState) => !prevState);
 
   const openUpdatePermission = () => {
-    setTitleModal(`Actualizar permisos del rol ${role.name}`);
+    setTitleModal(`${t("update")} ${t("permissions")} : ${role.name}`);
     onOpenCloseModal();
   };
 

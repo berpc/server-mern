@@ -83,7 +83,7 @@ export function ResetPasswordForm() {
             </Form.Item>
 
       <Form.Button type="submit" primary fluid loading={formik.isSubmitting}>
-        Actualizar contraseña
+        t("update") contraseña
       </Form.Button>
 
 

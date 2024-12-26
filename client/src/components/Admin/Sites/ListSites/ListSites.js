@@ -17,6 +17,7 @@ import { useAuth } from "../../../../hooks";
 import { SiteItem } from "../SiteItem";
 import { hasPermission, isAdmin, isMaster } from "../../../../utils/checkPermission";
 import { ErrorAccessDenied } from "../../../../pages/admin/Error";
+import { useLanguage } from "../../../../contexts";
 const _ = require("lodash");
 
 const siteController = new Site();
@@ -31,6 +32,11 @@ export function ListSites(props) {
     accessToken,
     user: { role },
   } = useAuth();
+
+   const { translations } = useLanguage();
+    
+    const t = (key) => translations[key] || key ; // Función para obtener la traducción
+  
 
   const [permissionByRole, setPermissionsByRole] = useState([]);
 
@@ -72,7 +78,7 @@ export function ListSites(props) {
   }, [sitesActive, reload, accessToken]);
 
   if (!sites) return <Loader active inline="centered" />;
-  if (size(sites) === 0) return "No hay ningun sitio";
+  if (size(sites) === 0) return t("there_is_no_site");
 
   return (
     <div>
@@ -84,6 +90,7 @@ export function ListSites(props) {
               dataOrigin={sites}
               data={sitesFilter}
               setData={setSitesFilter}
+              t={t}
             />
           </div>
           <Divider clearing />
@@ -91,9 +98,9 @@ export function ListSites(props) {
           <Table celled>
             <Table.Header>
               <Table.Row>
-                <Table.HeaderCell>Razon Social</Table.HeaderCell>
-                <Table.HeaderCell >Email</Table.HeaderCell>
-                <Table.HeaderCell >Acciones</Table.HeaderCell>
+                <Table.HeaderCell>{t("company_name")}</Table.HeaderCell>
+                <Table.HeaderCell >{t("email")}</Table.HeaderCell>
+                <Table.HeaderCell >{t("actions")}</Table.HeaderCell>
               </Table.Row>
             </Table.Header>
             <Table.Body>
@@ -111,7 +118,7 @@ export function ListSites(props) {
 }
 
 function SearchStandardSite(props) {
-  const { dataOrigin, data, setData } = props;
+  const { dataOrigin, data, setData,t } = props;
   const [state, setState] = useState({
     isLoading: false,
     results: [],
@@ -180,7 +187,7 @@ function SearchStandardSite(props) {
       <Input
      icon='search'
      iconPosition='left'
-    placeholder='Buscar...'
+    placeholder={t("search")}
     onChange={_.debounce(handleSearchChange, 500, {
       leading: true,
     })}

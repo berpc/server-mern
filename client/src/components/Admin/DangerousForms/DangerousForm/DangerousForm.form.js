@@ -19,7 +19,7 @@ export function initialValues(form, period, year) {
       reviews:[
       ],
       isApproved:false,
-      file:null
+      files:[]
     },
     lubricants_sent_to_reuse_or_recycle: form?.lubricants_sent_to_reuse_or_recycle || {
       code:dangerousCodes["lubricants_sent_to_reuse_or_recycle"],
@@ -28,7 +28,7 @@ export function initialValues(form, period, year) {
       reviews:[
       ],
       isApproved:false,
-      file:null
+      files:[]
     },
     oils_sent_to_reuse_or_recycle:form?.oils_sent_to_reuse_or_recycle || {
       code:dangerousCodes["oils_sent_to_reuse_or_recycle"],
@@ -37,7 +37,7 @@ export function initialValues(form, period, year) {
       reviews:[
       ],
       isApproved:false,
-      file:null
+      files:[]
     },
     machines_and_equipment_sent_to_reuse_or_recycle:form?.machines_and_equipment_sent_to_reuse_or_recycle || {
       code:dangerousCodes["machines_and_equipment_sent_to_reuse_or_recycle"],
@@ -46,7 +46,7 @@ export function initialValues(form, period, year) {
       reviews:[
       ],
       isApproved:false,
-      file:null
+      files:[]
     },
     electronic_waste_sent_to_reuse_or_recycle:form?.electronic_waste_sent_to_reuse_or_recycle || {
       code:dangerousCodes["electronic_waste_sent_to_reuse_or_recycle"],
@@ -55,7 +55,7 @@ export function initialValues(form, period, year) {
       reviews:[
       ],
       isApproved:false,
-      file:null
+      files:[]
     },
     other_dangerous_wastes_sent_to_reuse_or_recycle:form?.other_dangerous_wastes_sent_to_reuse_or_recycle || {
       code:dangerousCodes["other_dangerous_wastes_sent_to_reuse_or_recycle"],
@@ -64,7 +64,7 @@ export function initialValues(form, period, year) {
       reviews:[
       ],
       isApproved:false,
-      file:null
+      files:[]
     },
     chemicals_sent_to_incineration:form?.chemicals_sent_to_incineration || {
       code:dangerousCodes["chemicals_sent_to_incineration"],
@@ -73,7 +73,7 @@ export function initialValues(form, period, year) {
       reviews:[
       ],
       isApproved:false,
-      file:null
+      files:[]
     },
     lubricants_sent_to_incineration:form?.lubricants_sent_to_incineration || {
       code:dangerousCodes["lubricants_sent_to_incineration"],
@@ -82,7 +82,7 @@ export function initialValues(form, period, year) {
       reviews:[
       ],
       isApproved:false,
-      file:null
+      files:[]
     },
     oils_sent_to_incineration:form?.oils_sent_to_incineration || {
       code:dangerousCodes["oils_sent_to_incineration"],
@@ -91,7 +91,7 @@ export function initialValues(form, period, year) {
       reviews:[
       ],
       isApproved:false,
-      file:null
+      files:[]
     },
     machines_and_equipment_sent_to_incineration:form?.machines_and_equipment_sent_to_incineration || {
       code:dangerousCodes["machines_and_equipment_sent_to_incineration"],
@@ -100,7 +100,7 @@ export function initialValues(form, period, year) {
       reviews:[
       ],
       isApproved:false,
-      file:null
+      files:[]
     },
     electronic_waste_sent_to_incineration:form?.electronic_waste_sent_to_incineration || {
       code:dangerousCodes["electronic_waste_sent_to_incineration"],
@@ -109,7 +109,7 @@ export function initialValues(form, period, year) {
       reviews:[
       ],
       isApproved:false,
-      file:null
+      files:[]
     },
     other_dangerous_wastes_sent_to_incineration:form?.other_dangerous_wastes_sent_to_incineration || {
       code:dangerousCodes["other_dangerous_wastes_sent_to_incineration"],
@@ -118,7 +118,7 @@ export function initialValues(form, period, year) {
       reviews:[
       ],
       isApproved:false,
-      file:null
+      files:[]
     },
     chemicals_sent_to_landfill:form?.chemicals_sent_to_landfill || {
       code:dangerousCodes["chemicals_sent_to_landfill"],
@@ -127,7 +127,7 @@ export function initialValues(form, period, year) {
       reviews:[
       ],
       isApproved:false,
-      file:null
+      files:[]
     },
     lubricants_sent_to_landfill:form?.lubricants_sent_to_landfill || {
       code:dangerousCodes["lubricants_sent_to_landfill"],
@@ -136,7 +136,7 @@ export function initialValues(form, period, year) {
       reviews:[
       ],
       isApproved:false,
-      file:null
+      files:[]
     }
   };
 }

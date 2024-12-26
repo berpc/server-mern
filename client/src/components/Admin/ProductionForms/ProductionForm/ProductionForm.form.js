@@ -15,8 +15,8 @@ export function initialValues(production, period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
-      isApproved:false
+      isApproved:false,
+      files:[]
     },
     annual_average: production?.annual_average || {
       code:productionCodes["annual_average"],
@@ -24,8 +24,8 @@ export function initialValues(production, period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
-      isApproved:false
+      isApproved:false,
+      files:[]
     },
     
    

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Tab, Button , Table, Divider, Icon, Segment, Header, Dropdown} from "semantic-ui-react";
 import { BasicModal } from "../../../components/Shared";
-import { ListSiteForms, SiteForm } from "../../../components/Admin/SiteForms";
+import {SiteForm, ListSiteForms } from "../../../components/Admin/SiteForms";
 import { Link } from "react-router-dom";
 import "./Sites.scss";
 import { useAuth } from "../../../hooks";
@@ -10,6 +10,7 @@ import { encrypt,decrypt } from '../../../utils/cryptoUtils';
 import { useNavigate  } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import { hasPermission, isAdmin, isMaster } from "../../../utils/checkPermission";
+import { useLanguage } from "../../../contexts";
 
 const siteController= new Site();
 
@@ -28,6 +29,11 @@ export function SiteForms() {
   const onReload = () => setReload((prevState) => !prevState);
 
   const location = useLocation();
+
+  const { language, changeLanguage, translations } = useLanguage();
+      
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
+      
 
   useEffect(() => {
     (async () => {
@@ -68,6 +74,7 @@ export function SiteForms() {
             <SelectedListSites
               sitesFilter={sitesFilter}
               handleSelected={handleSelected}
+              t={t}
             />
           ) : !site && siteSelected !== null ? (
             <ListSiteForms
@@ -98,14 +105,14 @@ export function SiteForms() {
       <div className="site-forms-page">
         <Segment textAlign="center">
           {" "}
-          <Header as="h1">SITIO</Header>
+          <Header as="h1">{t("SITE")}</Header>
         </Segment>
         <div className="site-forms-page__add">
           {siteSelected !== null || site ? (
             //      <Link to={"/admin/effluentforms/neweffluentform"} state= {{siteSelected: encrypt(siteSelected) }}
             // >
             <Button primary onClick={onOpenCloseModal}>
-              <Icon name="plus" /> Nuevo Formulario Sitio
+              <Icon name="plus" /> {t("new_site_form")}
             </Button>
           ) : // </Link>
           null}
@@ -113,8 +120,8 @@ export function SiteForms() {
         <>
         {siteSelected !== null || site ? (
           <Dropdown
-            label="Año"
-            placeholder="Seleccione"
+            label={t("year")}
+            placeholder={t("select")}
             options={years.map((year) => {
               return {
                 key: year,
@@ -134,7 +141,7 @@ export function SiteForms() {
       <BasicModal
         show={showModal}
         close={onOpenCloseModal}
-        title="Formulario Sitio"
+        title={t("site_form")}
         size={"fullscreen"}
       >
         <SiteForm
@@ -149,7 +156,7 @@ export function SiteForms() {
 }
 
 function SelectedListSites(props) {
-  const { sitesFilter, role, permissionByRole, handleSelected } = props;
+  const { sitesFilter, role, permissionByRole, handleSelected, t } = props;
 
   return (
     <div>
@@ -161,9 +168,9 @@ function SelectedListSites(props) {
         <Table celled>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell>Razon Social</Table.HeaderCell>
-              <Table.HeaderCell>Email</Table.HeaderCell>
-              <Table.HeaderCell>Acciones</Table.HeaderCell>
+              <Table.HeaderCell>{t("company_name")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("email")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("actions")}</Table.HeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>

@@ -14,7 +14,7 @@ export function initialValues(site,period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
+      files:[],
       isApproved:false
     },
     product_category: site?.product_category || {
@@ -22,7 +22,7 @@ export function initialValues(site,period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
+      files:[],
       isApproved:false
     },
     days_month:site?.days_month || {
@@ -30,7 +30,7 @@ export function initialValues(site,period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
+      files:[],
       isApproved:false
     },
     days_total:site?.days_total || {
@@ -38,7 +38,7 @@ export function initialValues(site,period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
+      files:[],
       isApproved:false
     },
     hours_month:site?.hours_month || {
@@ -46,7 +46,7 @@ export function initialValues(site,period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
+      files:[],
       isApproved:false
     },
     hours_total:site?.hours_total || {
@@ -54,7 +54,7 @@ export function initialValues(site,period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
+      files:[],
       isApproved:false
     },
     temporary_workers:site?.temporary_workers || {
@@ -62,7 +62,7 @@ export function initialValues(site,period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
+      files:[],
       isApproved:false
     },
     permanent_production_workers:site?.permanent_production_workers || {
@@ -70,7 +70,7 @@ export function initialValues(site,period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
+      files:[],
       isApproved:false
     },
     permanent_administrative_workers:site?.permanent_administrative_workers || {
@@ -78,7 +78,7 @@ export function initialValues(site,period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
+      files:[],
       isApproved:false
     },
     female_production_workers:site?.female_production_workers || {
@@ -86,7 +86,7 @@ export function initialValues(site,period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
+      files:[],
       isApproved:false
     },
     male_production_workers:site?.male_production_workers || {
@@ -94,7 +94,7 @@ export function initialValues(site,period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
+      files:[],
       isApproved:false
     },
     female_administrative_workers:site?.female_administrative_workers || {
@@ -102,7 +102,7 @@ export function initialValues(site,period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
+      files:[],
       isApproved:false
     },
     male_administrative_workers:site?.male_administrative_workers || {
@@ -110,7 +110,7 @@ export function initialValues(site,period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
+      files:[],
       isApproved:false
     },
     female_workers_leadership_positions:site?.female_workers_leadership_positions || {
@@ -118,7 +118,7 @@ export function initialValues(site,period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
+      files:[],
       isApproved:false
     },
     male_workers_leadership_positions:site?.male_workers_leadership_positions || {
@@ -126,7 +126,7 @@ export function initialValues(site,period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
+      files:[],
       isApproved:false
     },
     average_total_workers:site?.average_total_workers || {
@@ -134,7 +134,7 @@ export function initialValues(site,period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
+      files:[],
       isApproved:false
     },
     average_female_workers:site?.average_female_workers || {
@@ -142,7 +142,7 @@ export function initialValues(site,period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
+      files:[],
       isApproved:false
     },
     average_male_workers:site?.average_male_workers || {
@@ -150,7 +150,7 @@ export function initialValues(site,period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
+      files:[],
       isApproved:false
     },
     percentage_female_workers:site?.percentage_female_workers || {
@@ -158,7 +158,7 @@ export function initialValues(site,period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
+      files:[],
       isApproved:false
     },
     percentage_male_workers:site?.percentage_male_workers || {
@@ -166,7 +166,7 @@ export function initialValues(site,period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
+      files:[],
       isApproved:false
     },
     
@@ -175,7 +175,7 @@ export function initialValues(site,period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
+      files:[],
       isApproved:false
     },
     percentage_total_male:site?.percentage_total_male || {
@@ -183,7 +183,7 @@ export function initialValues(site,period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
+      files:[],
       isApproved:false
     },
     percentage_female_leadership_positions:site?.percentage_female_leadership_positions || {
@@ -191,7 +191,7 @@ export function initialValues(site,period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
+      files:[],
       isApproved:false
     },
     percentage_male_leadership_positions:site?.percentage_male_leadership_positions || {
@@ -199,7 +199,7 @@ export function initialValues(site,period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
+      files:[],
       isApproved:false
     },
     work_accidents_with_sick_days:site?.work_accidents_with_sick_days || {
@@ -207,7 +207,7 @@ export function initialValues(site,period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
+      files:[],
       isApproved:false
     },
     first_aid_without_sick_days:site?.first_aid_without_sick_days || {
@@ -215,7 +215,7 @@ export function initialValues(site,period, year) {
       value:"",
       reviews:[
       ],
-      file:null,
+      files:[],
       isApproved:false
     },
   };

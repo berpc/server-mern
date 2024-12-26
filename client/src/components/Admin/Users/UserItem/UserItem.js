@@ -12,6 +12,7 @@ import {
   isAdmin,
   isMaster,
 } from "../../../../utils/checkPermission";
+import { useLanguage } from "../../../../contexts";
 
 const userController = new User();
 const permissionController = new Permission();
@@ -35,6 +36,10 @@ export function UserItem(props) {
   const onOpenCloseModal = () => setShowModal((prevState) => !prevState);
   const onOpenCloseConfirm = () => setShowConfirm((prevState) => !prevState);
 
+  const { translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
+
   useEffect(() => {
     (async () => {
       try {
@@ -55,7 +60,7 @@ export function UserItem(props) {
   }, [role]);
 
   const openUpdateUser = () => {
-    setTitleModal(`Actualizar ${user.email}`);
+    setTitleModal(`${t("update")} ${user.email}`);
     onOpenCloseModal();
   };
 
@@ -63,8 +68,8 @@ export function UserItem(props) {
     setIsDelete(false);
     setConfirmMessage(
       user.active
-        ? `Desactivar usuario ${user.email}`
-        : `Activar usuario ${user.email}`
+        ? `${t("inactive_user")} ${user.email}`
+        : `${t("active_user")}  ${user.email}`
     );
     onOpenCloseConfirm();
   };
@@ -83,7 +88,7 @@ export function UserItem(props) {
 
   const openDeleteConfirm = () => {
     setIsDelete(true);
-    setConfirmMessage(`Eliminar usuario ${user.email}`);
+    setConfirmMessage(`${t("delete_user")} ${user.email}`);
     onOpenCloseConfirm();
   };
 

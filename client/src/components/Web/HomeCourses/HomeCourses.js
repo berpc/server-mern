@@ -2,25 +2,25 @@ import React, { useState, useEffect } from "react";
 import { Container, Image, Button } from "semantic-ui-react";
 import { Link } from "react-router-dom";
 import { map } from "lodash";
-import { Course } from "../../../api";
+//import { Course } from "../../../api";
 import { ENV } from "../../../utils";
 import "./HomeCourses.scss";
 
-const courseController = new Course();
+//const courseController = new Course();
 
 export function HomeCourses() {
   const [courses, setCourses] = useState(null);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const response = await courseController.getCourses({ limit: 6 });
-        setCourses(response.docs);
-      } catch (error) {
-        console.error(error);
-      }
-    })();
-  }, []);
+  // useEffect(() => {
+  //   (async () => {
+  //     try {
+  //       const response = await courseController.getCourses({ limit: 6 });
+  //       setCourses(response.docs);
+  //     } catch (error) {
+  //       console.error(error);
+  //     }
+  //   })();
+  // }, []);
 
   return (
     <Container className="home-courses">

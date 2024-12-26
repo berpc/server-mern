@@ -5,7 +5,7 @@ import {
   Divider,
   Dropdown,
   Confirm,
-  Segment
+  Segment,
 } from "semantic-ui-react";
 import { size, map } from "lodash";
 import { Dangerousform } from "../../../../api";
@@ -20,17 +20,14 @@ import { DangerousForm } from "../DangerousForm";
 import { BasicModal } from "../../../Shared";
 import { PERIODS } from "../../../../utils";
 import { dangerousCodes } from "../../../../utils/codes";
-import {
-  convertDangerousFieldsEngToEsp,
-  convertPeriodsEngToEsp,
-} from "../../../../utils/converts";
 import { formatDateView } from "../../../../utils/formatDate";
+import { useLanguage } from "../../../../contexts";
 const _ = require("lodash");
 
 const dangerousFormController = new Dangerousform();
 
 export function ListDangerousForms(props) {
-  const { reload, onReload, siteSelected , yearSelected} = props;
+  const { reload, onReload, siteSelected, yearSelected } = props;
   const [dangerousForms, setDangerousForms] = useState([]);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState();
@@ -40,26 +37,30 @@ export function ListDangerousForms(props) {
     accessToken,
   } = useAuth();
 
+  const { translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
+
   useEffect(() => {
     (async () => {
-      if(yearSelected!=="" && siteSelected!==undefined)
-      try {
-        const response = await dangerousFormController.getDangerousFormsBySiteAndYear(
-          accessToken,
-          siteSelected,
-          yearSelected
-        );
-        if (response.code ===200) {
-          setDangerousForms(response.dangerousForms);
-        } else {
-          setDangerousForms([]);
+      if (yearSelected !== "" && siteSelected !== undefined)
+        try {
+          const response =
+            await dangerousFormController.getDangerousFormsBySiteAndYear(
+              accessToken,
+              siteSelected,
+              yearSelected
+            );
+          if (response.code === 200) {
+            setDangerousForms(response.dangerousForms);
+          } else {
+            setDangerousForms([]);
+          }
+        } catch (error) {
+          console.error(error);
         }
-
-      } catch (error) {
-        console.error(error);
-      }
     })();
-  }, [yearSelected,siteSelected, reload]);
+  }, [yearSelected, siteSelected, reload]);
 
   if (!dangerousForms) return <Loader active inline="centered" />;
   //if (size(dangerousForms) === 0) return "No hay ningun formulario de efluentes";
@@ -73,15 +74,14 @@ export function ListDangerousForms(props) {
         accessToken={accessToken}
         year={yearSelected}
         site={siteSelected}
+        t={t}
       />
     </div>
   );
 }
 
-
 function TablePeriods(props) {
-
-  const { data, onReload, accessToken , year, site} = props;
+  const { data, onReload, accessToken, year, site, t } = props;
 
   const [showModal, setShowModal] = useState(false);
   const [titleModal, setTitleModal] = useState("");
@@ -90,8 +90,7 @@ function TablePeriods(props) {
   const [dataDeleted, setDataDelete] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const handleConfirm = (e) => setDataDelete(e)
-
+  const handleConfirm = (e) => setDataDelete(e);
 
   // Estado para controlar el modal
   const [selectedPeriod, setSelectedPeriod] = useState(null);
@@ -110,11 +109,9 @@ function TablePeriods(props) {
   const handleDeleteModal = (period) => {
     const form = data.find((item) => item.period === period);
     setConfirmContent(
-      `Eliminar el formulario de Peligrosos con fecha ${formatDateView(
-        form.date
-      )}`
+      `${t("delete_dated_dangerous_form")} ${formatDateView(form.date)}`
     );
-    setDataDelete(form)
+    setDataDelete(form);
     onOpenCloseConfirm();
   };
 
@@ -122,9 +119,7 @@ function TablePeriods(props) {
     //setFieldName(name);
     const form = data.find((item) => item.period === period);
     setTitleModal(
-      `Actualizar formulario efluente: ${convertPeriodsEngToEsp(form.period)}-${
-        form.year
-      }`
+      `${t("update")} ${t("dangerous_form")}: ${t(form.period)}-${form.year}`
     );
     setModalContent(
       <DangerousForm
@@ -137,9 +132,15 @@ function TablePeriods(props) {
   };
 
   const openNewDangerousForm = (period) => {
-    setTitleModal(`Nuevo Formulario Peligrosos`);
+    setTitleModal(t("new_dangerous_form"));
     setModalContent(
-      <DangerousForm onClose={onOpenCloseModal} onReload={onReload} period={period} year={year} siteSelected={site}/>
+      <DangerousForm
+        onClose={onOpenCloseModal}
+        onReload={onReload}
+        period={period}
+        year={year}
+        siteSelected={site}
+      />
     );
     setShowModal(true);
   };
@@ -147,7 +148,10 @@ function TablePeriods(props) {
   const onDelete = async () => {
     try {
       //TODO: modificar por controlador correspondiente
-      await dangerousFormController.deleteDangerousForm(accessToken, dataDeleted._id);
+      await dangerousFormController.deleteDangerousForm(
+        accessToken,
+        dataDeleted._id
+      );
       setDataDelete("");
       onReload();
       onOpenCloseConfirm();
@@ -197,16 +201,23 @@ function TablePeriods(props) {
       <Table celled structured>
         <Table.Header>
           <Table.Row>
-            <Table.HeaderCell rowSpan='2'  textAlign="center">Codigo</Table.HeaderCell>
-            <Table.HeaderCell rowSpan='2'  textAlign="center">Concepto</Table.HeaderCell>
-            <Table.HeaderCell rowSpan='2'  textAlign="center">Unidades</Table.HeaderCell>
-            <Table.HeaderCell colSpan='14' textAlign="center">PERIODO DE REPORTE {year}</Table.HeaderCell>
-      </Table.Row>
-      <Table.Row>
+            <Table.HeaderCell rowSpan="2" textAlign="center">
+              {t("code")}
+            </Table.HeaderCell>
+            <Table.HeaderCell rowSpan="2" textAlign="center">
+              {t("concept")}
+            </Table.HeaderCell>
+            <Table.HeaderCell rowSpan="2" textAlign="center">
+              {t("units")}
+            </Table.HeaderCell>
+            <Table.HeaderCell colSpan="14" textAlign="center">
+              {t("report_period")} {year}
+            </Table.HeaderCell>
+          </Table.Row>
+          <Table.Row>
             {periods.map((period, index) => (
               <Table.HeaderCell key={index}>
-
-                {convertPeriodsEngToEsp(period)}
+                {t(period)}
                 {hasDataPeriod(period) ? (
                   <>
                     <Dropdown
@@ -215,16 +226,15 @@ function TablePeriods(props) {
                       icon="ellipsis vertical"
                       floating
                       className="icon"
-    
                     >
                       <Dropdown.Menu>
                         <Dropdown.Item
-                          text="Editar"
+                          text={t("edit")}
                           icon="edit"
                           onClick={() => openUpdateDangerousForm(period)}
                         />
                         <Dropdown.Item
-                          text="Eliminar"
+                          text={t("delete")}
                           icon="trash"
                           onClick={() => handleDeleteModal(period)}
                         />
@@ -243,7 +253,7 @@ function TablePeriods(props) {
                     >
                       <Dropdown.Menu>
                         <Dropdown.Item
-                          text="Cargar datos"
+                          text={t("load_data")}
                           icon="plus"
                           onClick={() => openNewDangerousForm(period)}
                         />
@@ -253,8 +263,8 @@ function TablePeriods(props) {
                 )}
               </Table.HeaderCell>
             ))}
-            <Table.HeaderCell>Total</Table.HeaderCell>
-            <Table.HeaderCell>Promedio</Table.HeaderCell>
+            <Table.HeaderCell>{t("total")}</Table.HeaderCell>
+            <Table.HeaderCell>{t("average")}</Table.HeaderCell>
           </Table.Row>
         </Table.Header>
         <Table.Body>
@@ -262,7 +272,7 @@ function TablePeriods(props) {
             <React.Fragment key={field}>
               <Table.Row>
                 <Table.Cell>{dangerousCodes[field]}</Table.Cell>
-                <Table.Cell>{convertDangerousFieldsEngToEsp(field)}</Table.Cell>
+                <Table.Cell>{t(field)}</Table.Cell>
                 <Table.Cell>{"-"}</Table.Cell>
                 {periods.map((period) => {
                   const item = data.find((d) => d.period === period);
@@ -321,8 +331,9 @@ function TablePeriods(props) {
         onConfirm={onDelete}
         content={confirmContent}
         size="tiny"
-        cancelButton="Cancelar"
-        confirmButton="Aceptar"
+        cancelButton={t("cancel")}
+        confirmButton={t("accept")}
+        header={t("delete")}
       />
     </>
   );

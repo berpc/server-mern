@@ -89,6 +89,7 @@ export function ListCompanies(props) {
               dataOrigin={companies}
               data={companiesFilter}
               setData={setCompaniesFilter}
+              t={t}
             />
           </div>
           <Divider clearing />
@@ -115,7 +116,7 @@ export function ListCompanies(props) {
 }
 
 function SearchStandardCompany(props) {
-  const { dataOrigin, data, setData } = props;
+  const { dataOrigin, data, setData, t } = props;
   const [state, setState] = useState({
     isLoading: false,
     results: [],
@@ -184,7 +185,7 @@ function SearchStandardCompany(props) {
       <Input
      icon='search'
      iconPosition='left'
-    placeholder='Buscar...'
+    placeholder={t("search")}
     onChange={_.debounce(handleSearchChange, 500, {
       leading: true,
     })}

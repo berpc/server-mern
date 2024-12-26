@@ -49,7 +49,7 @@ export function CompanyItem(props) {
   }, [role]);
 
   const openUpdateCompany = () => {
-    setTitleModal(`Actualizar ${company.name}`);
+    setTitleModal(`t("update") ${company.name}`);
     onOpenCloseModal();
   };
 

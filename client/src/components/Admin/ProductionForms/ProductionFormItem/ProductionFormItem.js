@@ -10,8 +10,12 @@ import {
   isAdmin,
   isMaster,
 } from "../../../../utils/checkPermission";
-import { formatDateHourCompleted, formatDateView } from "../../../../utils/formatDate";
+import {
+  formatDateHourCompleted,
+  formatDateView,
+} from "../../../../utils/formatDate";
 import "./ProductionFormItem.scss";
+import { useLanguage } from "../../../../contexts";
 
 const productionFormController = new Productionform();
 const permissionController = new Permission();
@@ -21,12 +25,19 @@ export function ProductionFormItem(props) {
   const [showModal, setShowModal] = useState(false);
   const [titleModal, setTitleModal] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
-  const { accessToken  , user: { role }, } = useAuth();
+  const {
+    accessToken,
+    user: { role },
+  } = useAuth();
 
   const onOpenCloseModal = () => setShowModal((prevState) => !prevState);
   const onOpenCloseConfirm = () => setShowConfirm((prevState) => !prevState);
 
   const [permissionsByRole, setPermissionsByRole] = useState([]);
+
+  const { translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
 
   useEffect(() => {
     (async () => {
@@ -48,14 +59,17 @@ export function ProductionFormItem(props) {
   }, [role]);
 
   const openUpdateSite = () => {
-    setTitleModal(`Actualizar Formulario de Producción`);
+    setTitleModal(`${t("update")} ${t("production_form")}`);
     onOpenCloseModal();
   };
 
   const onDelete = async () => {
     try {
       //TODO: modificar por controlador correspondiente
-      await productionFormController.deleteProductionForm(accessToken, productionForm._id);
+      await productionFormController.deleteProductionForm(
+        accessToken,
+        productionForm._id
+      );
       onReload();
       onOpenCloseConfirm();
     } catch (error) {
@@ -65,16 +79,19 @@ export function ProductionFormItem(props) {
 
   return (
     <>
-
-        <Table.Row key={productionForm._id}>
+      <Table.Row key={productionForm._id}>
         <Table.Cell>
           <Icon color={productionForm.active ? "green" : "red"} name="circle" />
         </Table.Cell>
         <Table.Cell>{formatDateView(productionForm.date)}</Table.Cell>
         <Table.Cell>
-          {productionForm.creator_user? 
-          productionForm.creator_user.lastname? productionForm.creator_user.lastname + " " + productionForm.creator_user.firstname
-          : productionForm.creator_user.email : null}
+          {productionForm.creator_user
+            ? productionForm.creator_user.lastname
+              ? productionForm.creator_user.lastname +
+                " " +
+                productionForm.creator_user.firstname
+              : productionForm.creator_user.email
+            : null}
         </Table.Cell>
         <Table.Cell>
           {isMaster(role) ||
@@ -98,7 +115,7 @@ export function ProductionFormItem(props) {
           ) : null}
         </Table.Cell>
       </Table.Row>
-          {/* <Button icon as="a" href={siteForm.url} target="_blank">
+      {/* <Button icon as="a" href={siteForm.url} target="_blank">
             <Icon name="eye" />
           </Button>
           <Button icon primary onClick={openUpdateSite}>
@@ -108,7 +125,12 @@ export function ProductionFormItem(props) {
             <Icon name="trash" />
           </Button> */}
 
-      <BasicModal show={showModal} close={onOpenCloseModal} title={titleModal} size={'fullscreen'}>
+      <BasicModal
+        show={showModal}
+        close={onOpenCloseModal}
+        title={titleModal}
+        size={"fullscreen"}
+      >
         <ProductionForm
           onClose={onOpenCloseModal}
           onReload={onReload}
@@ -120,7 +142,9 @@ export function ProductionFormItem(props) {
         open={showConfirm}
         onCancel={onOpenCloseConfirm}
         onConfirm={onDelete}
-        content={`Eliminar el formulario de producción con fecha ${formatDateView(productionForm.date)}`}
+        content={`${t("delete_production_form_with_date")} ${formatDateView(
+          productionForm.date
+        )}`}
         size="mini"
       />
     </>

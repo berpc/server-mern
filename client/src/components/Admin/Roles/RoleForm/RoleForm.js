@@ -5,12 +5,17 @@ import { Role } from "../../../../api";
 import { useAuth } from "../../../../hooks";
 import { initialValues, validationSchema } from "./RoleForm.form";
 import "./RoleForm.scss";
+import { useLanguage } from "../../../../contexts";
 
 const roleController = new Role();
 
 export function RoleForm(props) {
   const { close, onReload, role } = props;
   const { accessToken } = useAuth();
+
+  const { translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
 
   const formik = useFormik({
     initialValues: initialValues(role),
@@ -40,9 +45,9 @@ export function RoleForm(props) {
     <Form className="role-form" onSubmit={formik.handleSubmit}>
       <Form.Group widths="equal">
         <Form.Input
-          label="Nombre"
+          label={t("role")}
           name="name"
-          placeholder="Nombre"
+          placeholder={t("role")}
           onChange={formik.handleChange}
           value={formik.values.name}
           error={formik.errors.name}
@@ -59,9 +64,9 @@ export function RoleForm(props) {
       <Form.Group>
         <TextArea
           style={{ minHeight: 100 }}
-          label="Descripcion"
+          label={t("description")}
           name="description"
-          placeholder="Descripcion"
+          placeholder={t("description")}
           onChange={formik.handleChange}
           value={formik.values.description}
           error={formik.errors.description}
@@ -69,7 +74,7 @@ export function RoleForm(props) {
       </Form.Group>
 
       <Form.Button type="submit" primary fluid loading={formik.isSubmitting}>
-        {role ? "Actualizar rol" : "Crear rol"}
+        {role ? t("update") : t("create")}
       </Form.Button>
     </Form>
   );

@@ -20,6 +20,8 @@ import {
   ModalActions,
   ModalContent,
   ModalHeader,
+  List,
+  Message,
 } from "semantic-ui-react";
 import { useDropzone } from "react-dropzone";
 import { useFormik, Field, FieldArray, FormikProvider, getIn } from "formik";
@@ -36,10 +38,7 @@ import { useNavigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import { decrypt, encrypt } from "../../../../utils/cryptoUtils";
 import "./SiteForm.scss";
-import {
-  convertEnergyFieldsEngToEsp,
-  convertPeriodsEngToEsp,
-} from "../../../../utils/converts";
+import { useLanguage } from "../../../../contexts";
 
 const energyFormController = new Energyform();
 
@@ -52,16 +51,22 @@ export function EnergyForm(props) {
   const [fieldName, setFieldName] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
   const [listPeriods, setListPeriods] = useState([]);
+
+  const [newFiles, setNewFiles] = useState([]);
+
   const { user } = useAuth();
 
   const location = useLocation();
   // const { siteSelected } = location.state || {};
 
+  const { translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
+
   if (!siteSelected) {
     // // Manejo de caso donde no hay datos en state (por ejemplo, acceso directo a la URL)
     // return <div>No se encontraron detalles de producto.</div>;
   }
-  console.log(energyForm);
 
   const navigate = useNavigate();
 
@@ -70,7 +75,7 @@ export function EnergyForm(props) {
 
   const openUpdateSite = (data, name) => {
     setFieldName(name);
-    setTitleModal(`Comentarios ${data}`);
+    setTitleModal(`${t("comments")} ${data}`);
     onOpenCloseModal();
   };
 
@@ -144,7 +149,6 @@ export function EnergyForm(props) {
           .map((period) => period);
 
         setListPeriods(availablePeriods);
-        console.log(availablePeriods);
       } catch (error) {
         console.error(error);
         setListPeriods([]);
@@ -156,9 +160,12 @@ export function EnergyForm(props) {
     <Form className="energy-form" onSubmit={formik.handleSubmit}>
       {energyForm ? (
         <Segment>
-          <Header as="h4"> Fecha: {formatDateView(formik.values.date)}</Header>
           <Header as="h4">
-            Usuario creador:{" "}
+            {" "}
+            {t("date")}: {formatDateView(formik.values.date)}
+          </Header>
+          <Header as="h4">
+            {t("creator_user")}:{" "}
             {formik.values.creator_user
               ? formik.values.creator_user.lastname
                 ? formik.values.creator_user.lastname +
@@ -175,8 +182,8 @@ export function EnergyForm(props) {
             <GridRow>
               <GridColumn>
                 <Form.Dropdown
-                  label="Año"
-                  placeholder="Seleccione"
+                  label={t("year")}
+                  placeholder={t("select")}
                   options={years.map((year) => {
                     return {
                       key: year,
@@ -194,12 +201,12 @@ export function EnergyForm(props) {
               </GridColumn>
               <GridColumn>
                 <Form.Dropdown
-                  label="Periodo"
-                  placeholder="Seleccione"
+                  label={t("period")}
+                  placeholder={t("select")}
                   options={listPeriods.map((period) => {
                     return {
                       key: period,
-                      text: convertPeriodsEngToEsp(period),
+                      text: t(period),
                       value: period,
                     };
                   })}
@@ -218,12 +225,12 @@ export function EnergyForm(props) {
       <Table size="small" celled>
         <Table.Header>
           <Table.Row>
-            <Table.HeaderCell width="2">Codigo</Table.HeaderCell>
-            <Table.HeaderCell width="5">Concepto</Table.HeaderCell>
-            <Table.HeaderCell width="2">Valor</Table.HeaderCell>
-            <Table.HeaderCell width="1">Unidad</Table.HeaderCell>
-            <Table.HeaderCell width="2">Estado</Table.HeaderCell>
-            <Table.HeaderCell>Acciones</Table.HeaderCell>
+            <Table.HeaderCell width="1">{t("code")}</Table.HeaderCell>
+            <Table.HeaderCell width="6">{t("concept")}</Table.HeaderCell>
+            <Table.HeaderCell width="2">{t("value")}</Table.HeaderCell>
+            <Table.HeaderCell width="2">{t("unit")}</Table.HeaderCell>
+            <Table.HeaderCell width="2">{t("state")}</Table.HeaderCell>
+            <Table.HeaderCell>{t("actions")}</Table.HeaderCell>
           </Table.Row>
         </Table.Header>
         <Table.Body>
@@ -244,9 +251,7 @@ export function EnergyForm(props) {
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">
-                {convertEnergyFieldsEngToEsp("electricity_standard")}
-              </label>
+              <label className="label">{t("electricity_standard")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -278,9 +283,7 @@ export function EnergyForm(props) {
                     data.value
                   )
                 }
-                value={
-                  formik.values.electricity.electricity_standard.unit
-                }
+                value={formik.values.electricity.electricity_standard.unit}
                 error={formik.errors.electricity}
               />
               {/* {formik.values.days_total.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
@@ -288,14 +291,14 @@ export function EnergyForm(props) {
 
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -320,7 +323,7 @@ export function EnergyForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertEnergyFieldsEngToEsp("electricity_standard"),
+                    t("electricity_standard"),
                     `electricity.electricity_standard`
                   );
                 }}
@@ -331,6 +334,9 @@ export function EnergyForm(props) {
                 accessToken={accessToken}
                 data={formik}
                 field={"electricity.electricity_standard"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
               />
             </Table.Cell>
           </Table.Row>
@@ -342,9 +348,7 @@ export function EnergyForm(props) {
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">
-                {convertEnergyFieldsEngToEsp("electricity_cost")}
-              </label>
+              <label className="label">{t("electricity_cost")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -362,7 +366,7 @@ export function EnergyForm(props) {
 
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
                   { _id: "$ Arg", name: " $ Arg" },
                   { _id: "US$", name: "US$" },
@@ -389,14 +393,14 @@ export function EnergyForm(props) {
 
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -420,7 +424,7 @@ export function EnergyForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertEnergyFieldsEngToEsp("electricity_cost"),
+                    t("electricity_cost"),
                     `electricity.electricity_cost`
                   );
                 }}
@@ -431,6 +435,9 @@ export function EnergyForm(props) {
                 accessToken={accessToken}
                 data={formik}
                 field={"electricity.electricity_cost"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
               />
             </Table.Cell>
           </Table.Row>
@@ -442,9 +449,7 @@ export function EnergyForm(props) {
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">
-                {convertEnergyFieldsEngToEsp("renewable_energies")}
-              </label>
+              <label className="label">{t("renewable_energies")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -483,14 +488,14 @@ export function EnergyForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -513,7 +518,7 @@ export function EnergyForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertEnergyFieldsEngToEsp("renewable_energies"),
+                    t("renewable_energies"),
                     `electricity.renewable_energies`
                   );
                 }}
@@ -524,6 +529,9 @@ export function EnergyForm(props) {
                 accessToken={accessToken}
                 data={formik}
                 field={"electricity.renewable_energies"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
               />
             </Table.Cell>
           </Table.Row>
@@ -539,9 +547,7 @@ export function EnergyForm(props) {
             </Table.Cell>
             <Table.Cell>
               <label className="label">
-                {convertEnergyFieldsEngToEsp(
-                  "renewable_energies_produced_and_consumed_on_site"
-                )}
+                {t("renewable_energies_produced_and_consumed_on_site")}
               </label>
             </Table.Cell>
             <Table.Cell>
@@ -588,14 +594,14 @@ export function EnergyForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -621,7 +627,7 @@ export function EnergyForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertEnergyFieldsEngToEsp("renewable_energies_produced_and_consumed_on_site"),
+                    t("renewable_energies_produced_and_consumed_on_site"),
                     `electricity.renewable_energies_produced_and_consumed_on_site`
                   );
                 }}
@@ -634,6 +640,9 @@ export function EnergyForm(props) {
                 field={
                   "electricity.renewable_energies_produced_and_consumed_on_site"
                 }
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
               />
             </Table.Cell>
           </Table.Row>
@@ -641,7 +650,7 @@ export function EnergyForm(props) {
           {/* Combustibles */}
           <Table.Row>
             <Table.Cell>
-              <Label ribbon>Combustibles</Label>
+              <Label ribbon>{t("fuels")}</Label>
               {/* <label className="label">Combustibles</label> */}
             </Table.Cell>
             <Table.Cell></Table.Cell>
@@ -654,9 +663,7 @@ export function EnergyForm(props) {
               <label className="label">{formik.values.fuels.steam.code} </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">
-                {convertEnergyFieldsEngToEsp("steam")}
-              </label>
+              <label className="label">{t("steam")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -693,14 +700,14 @@ export function EnergyForm(props) {
 
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -719,7 +726,7 @@ export function EnergyForm(props) {
                 type="button"
                 primary
                 onClick={() => {
-                  openUpdateSite(convertEnergyFieldsEngToEsp("steam"), `fuels.steam}`);
+                  openUpdateSite(t("steam"), `fuels.steam}`);
                 }}
               >
                 <Icon name="comment outline" />
@@ -728,6 +735,9 @@ export function EnergyForm(props) {
                 accessToken={accessToken}
                 data={formik}
                 field={"fuels.steam"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
               />
             </Table.Cell>
           </Table.Row>
@@ -739,9 +749,7 @@ export function EnergyForm(props) {
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">
-                {convertEnergyFieldsEngToEsp("steam_cost")}
-              </label>
+              <label className="label">{t("steam_cost")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -758,7 +766,7 @@ export function EnergyForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
                   { _id: "$ Arg", name: " $ Arg" },
                   { _id: "US$", name: "US$" },
@@ -782,14 +790,14 @@ export function EnergyForm(props) {
 
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -811,7 +819,7 @@ export function EnergyForm(props) {
                 type="button"
                 primary
                 onClick={() => {
-                  openUpdateSite(convertEnergyFieldsEngToEsp("steam_cost"), `fuels.steam_cost}`);
+                  openUpdateSite(t("steam_cost"), `fuels.steam_cost}`);
                 }}
               >
                 <Icon name="comment outline" />
@@ -820,6 +828,9 @@ export function EnergyForm(props) {
                 accessToken={accessToken}
                 data={formik}
                 field={"fuels.steam_cost"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
               />
             </Table.Cell>
           </Table.Row>
@@ -831,9 +842,7 @@ export function EnergyForm(props) {
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">
-                {convertEnergyFieldsEngToEsp("natural_gas")}
-              </label>
+              <label className="label">{t("natural_gas")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -860,10 +869,7 @@ export function EnergyForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue(
-                    "fuels.natural_gas.unit",
-                    data.value
-                  )
+                  formik.setFieldValue("fuels.natural_gas.unit", data.value)
                 }
                 value={formik.values.fuels.natural_gas.unit}
                 error={formik.errors.fuels}
@@ -873,14 +879,14 @@ export function EnergyForm(props) {
 
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -902,7 +908,7 @@ export function EnergyForm(props) {
                 type="button"
                 primary
                 onClick={() => {
-                  openUpdateSite(convertEnergyFieldsEngToEsp("natural_gas"), `fuels.natural_gas}`);
+                  openUpdateSite(t("natural_gas"), `fuels.natural_gas}`);
                 }}
               >
                 <Icon name="comment outline" />
@@ -911,6 +917,9 @@ export function EnergyForm(props) {
                 accessToken={accessToken}
                 data={formik}
                 field={"fuels.natural_gas"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
               />
             </Table.Cell>
           </Table.Row>
@@ -922,9 +931,7 @@ export function EnergyForm(props) {
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">
-                {convertEnergyFieldsEngToEsp("natural_gas_cost")}
-              </label>
+              <label className="label">{t("natural_gas_cost")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -942,7 +949,7 @@ export function EnergyForm(props) {
 
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
                   { _id: "$ Arg", name: " $ Arg" },
                   { _id: "US$", name: "US$" },
@@ -957,7 +964,10 @@ export function EnergyForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("fuels.natural_gas_cost.unit", data.value)
+                  formik.setFieldValue(
+                    "fuels.natural_gas_cost.unit",
+                    data.value
+                  )
                 }
                 value={formik.values.fuels.natural_gas_cost.unit}
                 error={formik.errors.fuels}
@@ -966,14 +976,14 @@ export function EnergyForm(props) {
 
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -996,7 +1006,7 @@ export function EnergyForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertEnergyFieldsEngToEsp("natural_gas_cost"),
+                    t("natural_gas_cost"),
                     `fuels.natural_gas_cost`
                   );
                 }}
@@ -1007,6 +1017,9 @@ export function EnergyForm(props) {
                 accessToken={accessToken}
                 data={formik}
                 field={"fuels.natural_gas_cost"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
               />
             </Table.Cell>
           </Table.Row>
@@ -1016,9 +1029,7 @@ export function EnergyForm(props) {
               <label className="label">{formik.values.fuels.glp.code} </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">
-                {convertEnergyFieldsEngToEsp("glp")}
-              </label>
+              <label className="label">{t("glp")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1055,14 +1066,14 @@ export function EnergyForm(props) {
 
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -1081,7 +1092,7 @@ export function EnergyForm(props) {
                 type="button"
                 primary
                 onClick={() => {
-                  openUpdateSite(convertEnergyFieldsEngToEsp("glp"), `fuels.glp`);
+                  openUpdateSite(t("glp"), `fuels.glp`);
                 }}
               >
                 <Icon name="comment outline" />
@@ -1090,6 +1101,9 @@ export function EnergyForm(props) {
                 accessToken={accessToken}
                 data={formik}
                 field={"fuels.glp"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
               />
             </Table.Cell>
           </Table.Row>
@@ -1101,9 +1115,7 @@ export function EnergyForm(props) {
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">
-                {convertEnergyFieldsEngToEsp("glp_cost")}
-              </label>
+              <label className="label">{t("glp_cost")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1120,7 +1132,7 @@ export function EnergyForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
                   { _id: "$ Arg", name: " $ Arg" },
                   { _id: "US$", name: "US$" },
@@ -1143,14 +1155,14 @@ export function EnergyForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -1169,7 +1181,7 @@ export function EnergyForm(props) {
                 type="button"
                 primary
                 onClick={() => {
-                  openUpdateSite(convertEnergyFieldsEngToEsp("glp_cost"), `fuels.glp_cost`);
+                  openUpdateSite(t("glp_cost"), `fuels.glp_cost`);
                 }}
               >
                 <Icon name="comment outline" />
@@ -1178,6 +1190,9 @@ export function EnergyForm(props) {
                 accessToken={accessToken}
                 data={formik}
                 field={"fuels.glp_cost"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
               />
             </Table.Cell>
           </Table.Row>
@@ -1189,9 +1204,7 @@ export function EnergyForm(props) {
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">
-                {convertEnergyFieldsEngToEsp("heavy_fuel_oil")}
-              </label>
+              <label className="label">{t("heavy_fuel_oil")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1218,10 +1231,7 @@ export function EnergyForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue(
-                    "fuels.heavy_fuel_oil.unit",
-                    data.value
-                  )
+                  formik.setFieldValue("fuels.heavy_fuel_oil.unit", data.value)
                 }
                 value={formik.values.fuels.heavy_fuel_oil.unit}
                 error={formik.errors.fuels}
@@ -1231,14 +1241,14 @@ export function EnergyForm(props) {
 
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -1260,7 +1270,7 @@ export function EnergyForm(props) {
                 type="button"
                 primary
                 onClick={() => {
-                  openUpdateSite( convertEnergyFieldsEngToEsp("heavy_fuel_oil"), `fuels.heavy_fuel_oil`);
+                  openUpdateSite(t("heavy_fuel_oil"), `fuels.heavy_fuel_oil`);
                 }}
               >
                 <Icon name="comment outline" />
@@ -1269,6 +1279,9 @@ export function EnergyForm(props) {
                 accessToken={accessToken}
                 data={formik}
                 field={"fuels.heavy_fuel_oil"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
               />
             </Table.Cell>
           </Table.Row>
@@ -1280,9 +1293,7 @@ export function EnergyForm(props) {
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">
-                {convertEnergyFieldsEngToEsp("cost_of_heavy_fuel_oil")}
-              </label>
+              <label className="label">{t("cost_of_heavy_fuel_oil")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1299,7 +1310,7 @@ export function EnergyForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
                   { _id: "$ Arg", name: " $ Arg" },
                   { _id: "US$", name: "US$" },
@@ -1325,14 +1336,14 @@ export function EnergyForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -1355,7 +1366,7 @@ export function EnergyForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertEnergyFieldsEngToEsp("cost_of_heavy_fuel_oil"),
+                    t("cost_of_heavy_fuel_oil"),
                     `fuels.cost_of_heavy_fuel_oil`
                   );
                 }}
@@ -1366,6 +1377,9 @@ export function EnergyForm(props) {
                 accessToken={accessToken}
                 data={formik}
                 field={"fuels.cost_of_heavy_fuel_oil"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
               />
             </Table.Cell>
           </Table.Row>
@@ -1377,9 +1391,7 @@ export function EnergyForm(props) {
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">
-                {convertEnergyFieldsEngToEsp("light_fuel_oil")}
-              </label>
+              <label className="label">{t("light_fuel_oil")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1406,10 +1418,7 @@ export function EnergyForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue(
-                    "fuels.light_fuel_oil.unit",
-                    data.value
-                  )
+                  formik.setFieldValue("fuels.light_fuel_oil.unit", data.value)
                 }
                 value={formik.values.fuels.light_fuel_oil.unit}
                 error={formik.errors.fuels}
@@ -1419,14 +1428,14 @@ export function EnergyForm(props) {
 
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -1448,10 +1457,7 @@ export function EnergyForm(props) {
                 type="button"
                 primary
                 onClick={() => {
-                  openUpdateSite(
-                    convertEnergyFieldsEngToEsp("light_fuel_oil"),
-                    `fuels.light_fuel_oil}`
-                  );
+                  openUpdateSite(t("light_fuel_oil"), `fuels.light_fuel_oil}`);
                 }}
               >
                 <Icon name="comment outline" />
@@ -1460,6 +1466,9 @@ export function EnergyForm(props) {
                 accessToken={accessToken}
                 data={formik}
                 field={"fuels.light_fuel_oil"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
               />
             </Table.Cell>
           </Table.Row>
@@ -1469,9 +1478,7 @@ export function EnergyForm(props) {
               <label className="label">{formik.values.fuels.coal.code} </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">
-                {convertEnergyFieldsEngToEsp("coal")}
-              </label>
+              <label className="label">{t("coal")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1508,14 +1515,14 @@ export function EnergyForm(props) {
 
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -1534,7 +1541,7 @@ export function EnergyForm(props) {
                 type="button"
                 primary
                 onClick={() => {
-                  openUpdateSite(convertEnergyFieldsEngToEsp("coal"), `fuels.coal`);
+                  openUpdateSite(t("coal"), `fuels.coal`);
                 }}
               >
                 <Icon name="comment outline" />
@@ -1543,6 +1550,9 @@ export function EnergyForm(props) {
                 accessToken={accessToken}
                 data={formik}
                 field={"fuels.coal"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
               />
             </Table.Cell>
           </Table.Row>
@@ -1554,9 +1564,7 @@ export function EnergyForm(props) {
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">
-                {convertEnergyFieldsEngToEsp("coal_cost")}
-              </label>
+              <label className="label">{t("coal_cost")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1573,7 +1581,7 @@ export function EnergyForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
                   { _id: "$ Arg", name: " $ Arg" },
                   { _id: "US$", name: "US$" },
@@ -1596,14 +1604,14 @@ export function EnergyForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -1622,7 +1630,7 @@ export function EnergyForm(props) {
                 type="button"
                 primary
                 onClick={() => {
-                  openUpdateSite(convertEnergyFieldsEngToEsp("coal_cost"), `fuels.coal_cost`);
+                  openUpdateSite(t("coal_cost"), `fuels.coal_cost`);
                 }}
               >
                 <Icon name="comment outline" />
@@ -1631,6 +1639,9 @@ export function EnergyForm(props) {
                 accessToken={accessToken}
                 data={formik}
                 field={"fuels.coal_cost"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
               />
             </Table.Cell>
           </Table.Row>
@@ -1642,9 +1653,7 @@ export function EnergyForm(props) {
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">
-                {convertEnergyFieldsEngToEsp("diesel")}
-              </label>
+              <label className="label">{t("diesel")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1681,14 +1690,14 @@ export function EnergyForm(props) {
 
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -1707,7 +1716,7 @@ export function EnergyForm(props) {
                 type="button"
                 primary
                 onClick={() => {
-                  openUpdateSite(convertEnergyFieldsEngToEsp("diesel"), `fuels.diesel`);
+                  openUpdateSite(t("diesel"), `fuels.diesel`);
                 }}
               >
                 <Icon name="comment outline" />
@@ -1716,6 +1725,9 @@ export function EnergyForm(props) {
                 accessToken={accessToken}
                 data={formik}
                 field={"fuels.diesel"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
               />
             </Table.Cell>
           </Table.Row>
@@ -1727,9 +1739,7 @@ export function EnergyForm(props) {
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">
-                {convertEnergyFieldsEngToEsp("diesel_cost")}
-              </label>
+              <label className="label">{t("diesel_cost")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1746,7 +1756,7 @@ export function EnergyForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
                   { _id: "$ Arg", name: " $ Arg" },
                   { _id: "US$", name: "US$" },
@@ -1770,14 +1780,14 @@ export function EnergyForm(props) {
 
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -1799,7 +1809,7 @@ export function EnergyForm(props) {
                 type="button"
                 primary
                 onClick={() => {
-                  openUpdateSite(convertEnergyFieldsEngToEsp("diesel_cost"), `fuels.diesel_cost`);
+                  openUpdateSite(t("diesel_cost"), `fuels.diesel_cost`);
                 }}
               >
                 <Icon name="comment outline" />
@@ -1808,6 +1818,9 @@ export function EnergyForm(props) {
                 accessToken={accessToken}
                 data={formik}
                 field={"fuels.diesel_cost"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
               />
             </Table.Cell>
           </Table.Row>
@@ -1820,7 +1833,7 @@ export function EnergyForm(props) {
             </Table.Cell>
             <Table.Cell>
               <label className="label">
-                {convertEnergyFieldsEngToEsp("gasoline_for_internal_vehicles")}
+                {t("gasoline_for_internal_vehicles")}
               </label>
             </Table.Cell>
             <Table.Cell>
@@ -1853,9 +1866,7 @@ export function EnergyForm(props) {
                     data.value
                   )
                 }
-                value={
-                  formik.values.fuels.gasoline_for_internal_vehicles.uniy
-                }
+                value={formik.values.fuels.gasoline_for_internal_vehicles.uniy}
                 error={formik.errors.fuels}
               />
               {/* {formik.values.days_total.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
@@ -1863,14 +1874,14 @@ export function EnergyForm(props) {
 
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -1895,7 +1906,7 @@ export function EnergyForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertEnergyFieldsEngToEsp("gasoline_for_internal_vehicles"),
+                    t("gasoline_for_internal_vehicles"),
                     `fuels.gasoline_for_internal_vehicles}`
                   );
                 }}
@@ -1906,6 +1917,9 @@ export function EnergyForm(props) {
                 accessToken={accessToken}
                 data={formik}
                 field={"fuels.gasoline_for_internal_vehicles"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
               />
             </Table.Cell>
           </Table.Row>
@@ -1918,9 +1932,7 @@ export function EnergyForm(props) {
             </Table.Cell>
             <Table.Cell>
               <label className="label">
-                {convertEnergyFieldsEngToEsp(
-                  "gasoline_cost_of_internal_vehicles"
-                )}
+                {t("gasoline_cost_of_internal_vehicles")}
               </label>
             </Table.Cell>
             <Table.Cell>
@@ -1940,7 +1952,7 @@ export function EnergyForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
                   { _id: "$ Arg", name: " $ Arg" },
                   { _id: "US$", name: "US$" },
@@ -1969,14 +1981,14 @@ export function EnergyForm(props) {
 
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -2002,7 +2014,7 @@ export function EnergyForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertEnergyFieldsEngToEsp("gasoline_cost_of_internal_vehicles"),
+                    t("gasoline_cost_of_internal_vehicles"),
                     `fuels.gasoline_cost_of_internal_vehicles`
                   );
                 }}
@@ -2013,6 +2025,9 @@ export function EnergyForm(props) {
                 accessToken={accessToken}
                 data={formik}
                 field={"fuels.gasoline_cost_of_internal_vehicles"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
               />
             </Table.Cell>
           </Table.Row>
@@ -2024,9 +2039,7 @@ export function EnergyForm(props) {
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">
-                {convertEnergyFieldsEngToEsp("biomass")}
-              </label>
+              <label className="label">{t("biomass")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -2063,14 +2076,14 @@ export function EnergyForm(props) {
 
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -2089,7 +2102,7 @@ export function EnergyForm(props) {
                 type="button"
                 primary
                 onClick={() => {
-                  openUpdateSite(convertEnergyFieldsEngToEsp("biomass"), `fuels.biomass`);
+                  openUpdateSite(t("biomass"), `fuels.biomass`);
                 }}
               >
                 <Icon name="comment outline" />
@@ -2098,6 +2111,9 @@ export function EnergyForm(props) {
                 accessToken={accessToken}
                 data={formik}
                 field={"fuels.biomass"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
               />
             </Table.Cell>
           </Table.Row>
@@ -2109,9 +2125,7 @@ export function EnergyForm(props) {
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">
-                {convertEnergyFieldsEngToEsp("biomass_cost")}
-              </label>
+              <label className="label">{t("biomass_cost")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -2128,7 +2142,7 @@ export function EnergyForm(props) {
             </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
                   { _id: "$ Arg", name: " $ Arg" },
                   { _id: "US$", name: "US$" },
@@ -2152,14 +2166,14 @@ export function EnergyForm(props) {
 
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -2181,7 +2195,7 @@ export function EnergyForm(props) {
                 type="button"
                 primary
                 onClick={() => {
-                  openUpdateSite(convertEnergyFieldsEngToEsp("biomass_cost"), `fuels.biomass_cost`);
+                  openUpdateSite(t("biomass_cost"), `fuels.biomass_cost`);
                 }}
               >
                 <Icon name="comment outline" />
@@ -2190,6 +2204,9 @@ export function EnergyForm(props) {
                 accessToken={accessToken}
                 data={formik}
                 field={"fuels.biomass_cost"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
               />
             </Table.Cell>
           </Table.Row>
@@ -2219,11 +2236,12 @@ export function EnergyForm(props) {
           onReload={onReload}
           energyForm={energyForm}
           user={user}
+          t={t}
         />
       </BasicModal>
       <Form.Group widths="2">
         <Form.Button type="submit" fluid primary loading={formik.isSubmitting}>
-          {!energyForm ? "Guardar" : "Actualizar datos"}
+          {!energyForm ? t("save") : t("update")}
         </Form.Button>
         <Form.Button
           type="button"
@@ -2234,7 +2252,7 @@ export function EnergyForm(props) {
             onClose ? onClose() : goBack();
           }}
         >
-          {"Cancelar"}
+          {t("cancel")}
         </Form.Button>
       </Form.Group>
     </Form>
@@ -2242,7 +2260,7 @@ export function EnergyForm(props) {
 }
 
 function Comments(props) {
-  const { formik, user, fieldName, onClose } = props;
+  const { formik, user, fieldName, onClose, t } = props;
   const [comment, setComment] = useState("");
   console.log(user);
 
@@ -2294,6 +2312,7 @@ function Comments(props) {
                         : false
                       : false
                   }
+                  t={t}
                 />
                 <Divider fitted />
               </>
@@ -2312,7 +2331,7 @@ function Comments(props) {
         <Form.Button
           type="button"
           icon="edit"
-          content={"Añadir comentario"}
+          content={t("add_comment")}
           primary
           fluid
           onClick={onChangeHandle}
@@ -2322,7 +2341,7 @@ function Comments(props) {
   );
 }
 
-const EditableComment = ({ id, author, date, content, onSave, active }) => {
+const EditableComment = ({ id, author, date, content, onSave, active, t }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(content);
 
@@ -2356,8 +2375,8 @@ const EditableComment = ({ id, author, date, content, onSave, active }) => {
           {isEditing ? (
             <Form reply>
               <Form.TextArea value={editedContent} onChange={handleChange} />
-              <Button content="Guardar" onClick={handleSave} primary />
-              <Button content="Cancelar" onClick={handleCancel} secondary />
+              <Button content={t("save")} onClick={handleSave} primary />
+              <Button content={t("cancel")} onClick={handleCancel} secondary />
             </Form>
           ) : (
             <div>{editedContent}</div>
@@ -2365,7 +2384,7 @@ const EditableComment = ({ id, author, date, content, onSave, active }) => {
         </Comment.Text>
         {active ? (
           <Comment.Actions>
-            <Comment.Action onClick={handleEdit}>Editar</Comment.Action>
+            <Comment.Action onClick={handleEdit}>{t("edit")}</Comment.Action>
           </Comment.Actions>
         ) : null}
       </Comment.Content>
@@ -2407,116 +2426,8 @@ const EditableComment = ({ id, author, date, content, onSave, active }) => {
 //   )
 // }
 
-function FileUpload(props) {
-  const { accessToken, data, field } = props;
-  const [file, setFile] = useState(null);
-  const [fileName, setFileName] = useState(null);
-  const [message, setMessage] = useState("");
-
-  const allowedTypes = [
-    "image/jpeg",
-    "image/png",
-    "application/pdf",
-    //'application/vnd.ms-excel', // .xls
-    //'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' // .xlsx
-  ];
-
-  const getValueByKey = (json, key) => {
-    const keys = key.split("."); // Divide la cadena en partes
-    let value = json;
-
-    // Itera sobre las claves para acceder al valor final
-    for (const parte of keys) {
-      value = value[parte]; // Accede a la propiedad correspondiente
-      if (value === undefined) {
-        return undefined; // Si alguna clave no existe, retorna undefined
-      }
-    }
-    return value;
-  };
-
-  useEffect(() => {
-    const value = getValueByKey(data.values, field);
-    if (value && value.file !== null) {
-      setFileName(value.file);
-    }
-  }, [field]);
-
-  const handleFileChange = async (event) => {
-    const file = event.target.files[0];
-
-    if (file) {
-      if (!allowedTypes.includes(file.type)) {
-        console.log("Tipo de archivo no permitido. Debe ser JPG, PNG o PDF.");
-      } else {
-        setMessage(`Archivo seleccionado: ${file.name}`);
-
-        const formData = new FormData();
-        formData.append("file", file);
-
-        try {
-          const response = await energyFormController.uploadFileApi(
-            accessToken,
-            formData
-          );
-          setMessage(response.msg);
-          if (response.status && response.status === 200) {
-            setFile(file);
-            setFileName(file.name);
-            data.setFieldValue(`${field}.file`, file.name);
-          }
-        } catch (error) {
-          setMessage("Error al subir el archivo");
-        }
-      }
-    }
-  };
-
-  const handleButtonClick = (event) => {
-    event.preventDefault(); // Evita que el formulario se envíe
-    const input = document.createElement("input");
-    input.type = "file";
-    input.onchange = handleFileChange;
-    input.click();
-  };
-
-  const handleRemoveFile = async () => {
-    setFile(null); // Elimina el archivo
-    setFileName(null);
-    try {
-      const response = await energyFormController.deleteFileApi(
-        accessToken,
-        fileName
-      );
-      setMessage(response.message);
-      removeFile();
-    } catch (error) {
-      setMessage("Error al elimianr el archivo");
-    }
-  };
-
-  const removeFile = async () => {
-    data.setFieldValue(`${field}.file`, null);
-  };
-
-  return (
-    <>
-      {fileName ? (
-        <>
-          {/* <p>{file.name}</p> */}
-          <FileViewer fileName={fileName} handleRemove={handleRemoveFile} />
-        </>
-      ) : (
-        <Button icon onClick={handleButtonClick}>
-          <Icon name="paperclip" />
-        </Button>
-      )}
-    </>
-  );
-}
-
 function FileViewer(props) {
-  const { fileName, handleRemove } = props;
+  const { fileName, fileUniqueName, handleRemove, t } = props;
   const [fileUrl, setFileUrl] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
 
@@ -2525,8 +2436,11 @@ function FileViewer(props) {
       setFileUrl(fileName); // Construye la URL del archivo
       (async () => {
         try {
-          const response = await energyFormController.getFileApi(fileName);
+          const response = await energyFormController.getFileApi(
+            fileUniqueName
+          );
           setFileUrl(response); // Construye la URL del archivo
+          console.log(setFileUrl);
           //setMessage(response.message);
         } catch (error) {
           //setMessage('Error al elimianr el archivo');
@@ -2547,47 +2461,203 @@ function FileViewer(props) {
 
   return (
     <>
+      <List.Content floated="left">{fileName}</List.Content>
+      <List.Content floated="right">
+        {" "}
+        <Button
+          color="red"
+          onClick={() => handleRemove(fileUniqueName)}
+          icon="trash alternate"
+        />
+      </List.Content>
       {/* //<Button onClick={handleOpenPreview}> {fileName}</Button> */}
-
-      <Modal
-        onClose={handleClosePreview}
-        onOpen={handleOpenPreview}
-        open={previewOpen}
-        trigger={
-          <Button primary icon>
-            <Icon name="file alternate" />
-          </Button>
-        }
-      >
-        <ModalHeader>{fileName}</ModalHeader>
-        <ModalContent>
-          {fileName &&
-            (fileName.endsWith(".jpg") ||
-              fileName.endsWith(".png") ||
-              fileName.endsWith(".jpeg")) && (
-              <Image
+      <List.Content floated="right">
+        <Modal
+          onClose={handleClosePreview}
+          onOpen={handleOpenPreview}
+          open={previewOpen}
+          trigger={
+            <Button primary icon>
+              <Icon name="eye" />
+            </Button>
+          }
+        >
+          <ModalHeader>{fileName}</ModalHeader>
+          <ModalContent>
+            {fileName &&
+              (fileName.endsWith(".jpg") ||
+                fileName.endsWith(".png") ||
+                fileName.endsWith(".jpeg")) && (
+                <Image
+                  src={fileUrl}
+                  alt="Vista previa"
+                  style={{ maxWidth: "100%" }}
+                />
+              )}
+            {fileName && fileName.endsWith(".pdf") && (
+              <iframe
                 src={fileUrl}
-                alt="Vista previa"
-                style={{ maxWidth: "100%" }}
+                title={t("preview")}
+                style={{ width: "100%", height: "500px" }}
               />
             )}
-          {fileName && fileName.endsWith(".pdf") && (
-            <iframe
-              src={fileUrl}
-              title="Vista previa"
-              style={{ width: "100%", height: "500px" }}
-            />
-          )}
-        </ModalContent>
-        <ModalActions>
-          <Button color="red" onClick={handleRemove}>
+          </ModalContent>
+          <ModalActions>
+            {/* <Button color="red" onClick={() => handleRemove(fileName)}>
             <Icon disabled name="trash alternate" /> Eliminar
+          </Button> */}
+            <Button color="black" onClick={handleClosePreview}>
+              <Icon disabled name="close" />
+              {t("close")}
+            </Button>
+          </ModalActions>
+        </Modal>
+      </List.Content>
+    </>
+  );
+}
+
+function FileUpload(props) {
+  const { accessToken, data, field, newFiles, setNewFiles, t } = props;
+  const [files, setFiles] = useState([]);
+  const [filesView, setFilesView] = useState([]);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [openModal, setOpenModal] = useState(false); // Para controlar el estado del modal
+
+  useEffect(() => {
+    const value = getValueByKey(data.values, field);
+    if (value && value.files) {
+      setFilesView(value.files); // Construye la URL del archivo
+    }
+  }, [data]);
+
+  const getValueByKey = (json, key) => {
+    const keys = key.split("."); // Divide la cadena en partes
+    let value = json;
+
+    // Itera sobre las claves para acceder al valor final
+    for (const parte of keys) {
+      value = value[parte]; // Accede a la propiedad correspondiente
+      if (value === undefined) {
+        return undefined; // Si alguna clave no existe, retorna undefined
+      }
+    }
+    return value;
+  };
+
+  const handleButtonClick = (event) => {
+    event.preventDefault(); // Evita que el formulario se envíe
+    const input = document.createElement("input");
+    input.type = "file";
+    input.multiple = true;
+    input.onchange = handleFileChange;
+    input.click();
+  };
+
+  // Maneja el cambio cuando se seleccionan archivos
+  const handleFileChange = async (e) => {
+    e.preventDefault(); // Evita que el formulario se envíe
+    const selectedFiles = e.target.files;
+    setNewFiles({ ...newFiles, [field]: Array.from(selectedFiles) });
+    //data.setFieldValue(`${field}.files`,Array.from(selectedFiles))
+    setFiles([...selectedFiles]);
+  };
+
+  // Función para cerrar el modal
+  const closeModal = (event) => {
+    event.preventDefault();
+    setOpenModal(!openModal);
+  };
+
+  const handleRemoveFile = async (file) => {
+    try {
+      const updatedFiles = filesView.filter((f) => f.uniqueName !== file);
+      setFilesView(updatedFiles);
+      const response = await energyFormController.deleteFileApi(
+        accessToken,
+        file
+      );
+      //setMessage(response.message);
+      removeFile(updatedFiles);
+    } catch (error) {
+      // setMessage('Error al elimianr el archivo');
+    }
+  };
+
+  const removeFile = async (updatedFiles) => {
+    data.setFieldValue(`${field}.files`, updatedFiles);
+  };
+
+  return (
+    <>
+      {/* Input para seleccionar los archivos */}
+      {/* <Input
+        type="file"
+        multiple
+        icon={"paperclip"}
+        onChange={handleFileUpload}
+      /> */}
+
+      <Button
+        default
+        onClick={handleButtonClick}
+        icon="paperclip"
+        style={{ marginTop: "10px" }}
+        color={files.length > 0 ? "green" : "grey"}
+      ></Button>
+
+      {/* Mensajes de éxito o error */}
+      {successMessage && (
+        <Message success>
+          <Message.Header>Éxito</Message.Header>
+          <p>{successMessage}</p>
+        </Message>
+      )}
+
+      {errorMessage && (
+        <Message error>
+          <Message.Header>Error</Message.Header>
+          <p>{errorMessage}</p>
+        </Message>
+      )}
+
+      <Button
+        primary
+        onClick={closeModal}
+        style={{ marginTop: "10px" }}
+        icon="eye"
+      ></Button>
+      {/* Modal para mostrar los archivos subidos */}
+      <Modal open={openModal} onClose={closeModal} size="tiny">
+        <Modal.Header>Archivos subidos</Modal.Header>
+        <Modal.Content>
+          {filesView.length > 0 ? (
+            <List divided>
+              {filesView.map((filePath, index) => (
+                <List.Item key={index}>
+                  {/* <a href={`/${filePath.url}`} target="_blank" rel="noopener noreferrer">
+                      {filePath.url}
+                    </a> */}
+
+                  <FileViewer
+                    fileName={filePath.name}
+                    fileUniqueName={filePath.uniqueName}
+                    handleRemove={handleRemoveFile}
+                    t={t}
+                  />
+                </List.Item>
+              ))}
+            </List>
+          ) : (
+            <p>No se encontraron archivos subidos.</p>
+          )}
+        </Modal.Content>
+        <Modal.Actions>
+          <Button color="green" onClick={closeModal}>
+            {t("close")}
           </Button>
-          <Button color="black" onClick={handleClosePreview}>
-            <Icon disabled name="close" />
-            Cerrar
-          </Button>
-        </ModalActions>
+        </Modal.Actions>
       </Modal>
     </>
   );

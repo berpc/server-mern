@@ -35,6 +35,7 @@ import { FORMS, MODULES } from "../../../../utils";
 import { convertFormsEngToEsp } from "../../../../utils/converts";
 import { useLocation } from "react-router-dom";
 import "./ViewReport.scss";
+import { useLanguage } from "../../../../contexts";
 const _ = require("lodash");
 
 const permissionController = new Permission();
@@ -63,6 +64,10 @@ export function ViewReports(props) {
     user: { role, company, site },
     accessToken,
   } = useAuth();
+
+  const { translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
 
   const [permissionsByRole, setPermissionsByRole] = useState([]);
 
@@ -93,10 +98,9 @@ export function ViewReports(props) {
         if (!site && !location.state?.siteSelected) {
           const response = await siteController.getSites(accessToken);
           setListSites(response);
-        }else if(site){
+        } else if (site) {
           setSiteSelected(site._id);
         }
-
       } catch (error) {
         // console.error(error);
         setListSites([]);
@@ -109,7 +113,7 @@ export function ViewReports(props) {
       try {
         setData([]);
         if (yearSelected && moduleSelected !== null && siteSelected !== null) {
-          console.log(siteSelected)
+          console.log(siteSelected);
           setButtonAvailable(true);
           moduleConsult(moduleSelected);
         }
@@ -302,7 +306,6 @@ export function ViewReports(props) {
     })();
   }, [role]);
 
-
   if (
     isMaster(role) ||
     isAdmin(role) ||
@@ -315,32 +318,34 @@ export function ViewReports(props) {
         <div></div>
 
         <Segment>
-          {!site? 
-          <>
-          <label> Sitio </label>
-          <Dropdown
-            placeholder="Seleccione"
-            options={listSites.map((ds) => {
-              return {
-                key: ds._id,
-                text: ds.name,
-                value: ds._id,
-              };
-            })}
-            selection
-            onChange={(_, data) => setSiteSelected(data.value)}
-            value={siteSelected}
-          />
-          <Divider clearing /> </> :null}
+          {!site ? (
+            <>
+              <label> {t("site")} </label>
+              <Dropdown
+                placeholder={t("select")}
+                options={listSites.map((ds) => {
+                  return {
+                    key: ds._id,
+                    text: ds.name,
+                    value: ds._id,
+                  };
+                })}
+                selection
+                onChange={(_, data) => setSiteSelected(data.value)}
+                value={siteSelected}
+              />
+              <Divider clearing />{" "}
+            </>
+          ) : null}
 
           {siteSelected && siteSelected !== null ? (
             <>
               <Grid columns={2} className="grid-report">
                 <GridRow>
                   <GridColumn>
-                    <label> Datos </label>
+                    <label> {t("data")} </label>
                     <Dropdown
-                      placeholder="Seleccione"
+                      placeholder={t("select")}
                       options={listModules.map((ds) => {
                         return {
                           key: ds,
@@ -354,9 +359,9 @@ export function ViewReports(props) {
                     />
                   </GridColumn>
                   <GridColumn>
-                    <label> Año </label>
+                    <label> {t("year")} </label>
                     <Dropdown
-                      placeholder="Seleccione"
+                      placeholder={t("select")}
                       options={years.map((ds) => {
                         return {
                           key: ds,
@@ -377,17 +382,16 @@ export function ViewReports(props) {
             <GridRow>
               <GridColumn textAlign="center">
                 <Button
-                primary
-                disabled={buttonAvailable}
-                onClick={() => {
-                  reportPdfByYear(data, moduleSelected, yearSelected);
-                }}
-              >
-                {" "}
-                <Icon name="file pdf outline" />
-                Descargar PDF
-              </Button>
-                
+                  primary
+                  disabled={buttonAvailable}
+                  onClick={() => {
+                    reportPdfByYear(data, moduleSelected, yearSelected);
+                  }}
+                >
+                  {" "}
+                  <Icon name="file pdf outline" />
+                  {t("download")} PDF
+                </Button>
               </GridColumn>
 
               <GridColumn textAlign="center">

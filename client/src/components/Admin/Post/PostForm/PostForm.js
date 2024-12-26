@@ -8,12 +8,17 @@ import { useAuth } from "../../../../hooks";
 import { ENV } from "../../../../utils";
 import { initialValues, validationSchema } from "./PostForm.form";
 import "./PostForm.scss";
+import { useLanguage } from "../../../../contexts";
 
 const postController = new Post();
 
 export function PostForm(props) {
   const { onClose, onReload, post } = props;
   const { accessToken } = useAuth();
+
+  const { language, changeLanguage, translations } = useLanguage();
+      
+        const t = (key) => translations[key] || key; // Función para obtener la traducción
 
   const formik = useFormik({
     initialValues: initialValues(post),
@@ -104,7 +109,7 @@ export function PostForm(props) {
       </div>
 
       <Form.Button type="submit" primary fluid loading={formik.isSubmitting}>
-        {post ? "Actualizar post" : "Crear post"}
+        {post ? t("update") : t("create")}
       </Form.Button>
     </Form>
   );

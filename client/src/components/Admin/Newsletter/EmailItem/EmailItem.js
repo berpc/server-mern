@@ -3,6 +3,7 @@ import { Button, Icon, Confirm } from "semantic-ui-react";
 import { Newsletter } from "../../../../api";
 import { useAuth } from "../../../../hooks";
 import "./EmailItem.scss";
+import { useLanguage } from "../../../../contexts";
 
 const newsletterController = new Newsletter();
 
@@ -12,6 +13,10 @@ export function EmailItem(props) {
   const { accessToken } = useAuth();
 
   const onOpenCloseConfirm = () => setShowConfirm((prevState) => !prevState);
+
+  const { translations } = useLanguage();
+  
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
 
   const onDelete = async () => {
     try {
@@ -39,7 +44,7 @@ export function EmailItem(props) {
         open={showConfirm}
         onCancel={onOpenCloseConfirm}
         onConfirm={onDelete}
-        content={`Eliminar ${email.email}`}
+        content={`${t("delete")} ${email.email}`}
         size="mini"
       />
     </>

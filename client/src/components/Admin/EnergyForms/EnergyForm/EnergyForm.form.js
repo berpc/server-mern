@@ -15,13 +15,14 @@ export function initialValues(energy, period, year) {
         value: "",
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
       electricity_cost: energy?.electricity_cost || {
         code: energyCodes["electricity_cost"],
         unit: "",
         value: "",
         reviews: [],
+        files:[],
       },
       renewable_energies: energy?.renewable_energies || {
         code: energyCodes["renewable_energies"],
@@ -29,7 +30,7 @@ export function initialValues(energy, period, year) {
         value: "",
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
       renewable_energies_produced_and_consumed_on_site:
         energy?.renewable_energies_produced_and_consumed_on_site || {
@@ -38,7 +39,7 @@ export function initialValues(energy, period, year) {
           value: "",
           reviews: [],
           isApproved: false,
-          file: null,
+          files:[],
         },
     },
     fuels: energy?.fuels || {
@@ -48,7 +49,7 @@ export function initialValues(energy, period, year) {
         value: "",
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
       steam_cost: energy?.steam_cost || {
         code: energyCodes["steam_cost"],
@@ -56,7 +57,7 @@ export function initialValues(energy, period, year) {
         value: "",
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
       natural_gas: energy?.natural_gas || {
         code: energyCodes["natural_gas"],
@@ -64,7 +65,7 @@ export function initialValues(energy, period, year) {
         value: "",
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
       natural_gas_cost: energy?.natural_gas_cost || {
         code: energyCodes["natural_gas_cost"],
@@ -72,7 +73,7 @@ export function initialValues(energy, period, year) {
         value: "",
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
       glp: energy?.glp || {
         code: energyCodes["glp"],
@@ -80,7 +81,7 @@ export function initialValues(energy, period, year) {
         value: "",
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
       glp_cost: energy?.glp_cost || {
         code: energyCodes["glp_cost"],
@@ -88,7 +89,7 @@ export function initialValues(energy, period, year) {
         value: "",
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
       heavy_fuel_oil: energy?.natural_gas || {
         code: energyCodes["natural_gas"],
@@ -96,7 +97,7 @@ export function initialValues(energy, period, year) {
         value: "",
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
       cost_of_heavy_fuel_oil: energy?.natural_gas_cost || {
         code: energyCodes["natural_gas_cost"],
@@ -104,7 +105,7 @@ export function initialValues(energy, period, year) {
         value: "",
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
       light_fuel_oil: energy?.light_fuel_oil || {
         code: energyCodes["light_fuel_oil"],
@@ -112,7 +113,7 @@ export function initialValues(energy, period, year) {
         value: "",
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
       cost_of_light_fuel_oil: energy?.cost_of_light_fuel_oil || {
         code: energyCodes["cost_of_light_fuel_oil"],
@@ -120,7 +121,7 @@ export function initialValues(energy, period, year) {
         value: "",
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
       coal: energy?.coal || {
         code: energyCodes["coal"],
@@ -128,7 +129,7 @@ export function initialValues(energy, period, year) {
         value: "",
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
       coal_cost: energy?.coal_cost || {
         code: energyCodes["coal_cost"],
@@ -136,7 +137,7 @@ export function initialValues(energy, period, year) {
         value: "",
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
       diesel: energy?.diesel || {
         code: energyCodes["diesel"],
@@ -144,7 +145,7 @@ export function initialValues(energy, period, year) {
         value: "",
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
       diesel_cost: energy?.diesel_cost || {
         code: energyCodes["diesel_cost"],
@@ -152,7 +153,7 @@ export function initialValues(energy, period, year) {
         value: "",
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
       gasoline_for_internal_vehicles:
         energy?.gasoline_for_internal_vehicles || {
@@ -161,7 +162,7 @@ export function initialValues(energy, period, year) {
           value: "",
           reviews: [],
           isApproved: false,
-          file: null,
+          files:[],
         },
       gasoline_cost_of_internal_vehicles:
         energy?.gasoline_cost_of_internal_vehicles || {
@@ -172,7 +173,7 @@ export function initialValues(energy, period, year) {
           value: "",
           reviews: [],
           isApproved: false,
-          file: null,
+          files:[],
         },
       biomass: energy?.biomass || {
         code: energyCodes["biomass"],
@@ -180,8 +181,7 @@ export function initialValues(energy, period, year) {
         value: "",
         reviews: [],
         isApproved: false,
-        file: null,
-        file: null,
+        files:[],
       },
       biomass_cost: energy?.biomass_cost || {
         code: energyCodes["biomass_cost"],
@@ -189,7 +189,7 @@ export function initialValues(energy, period, year) {
         value: "",
         reviews: [],
         isApproved: false,
-        file: null,
+        files:[],
       },
     },
   };

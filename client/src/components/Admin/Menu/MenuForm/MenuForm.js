@@ -4,12 +4,17 @@ import { useFormik } from "formik";
 import { Menu } from "../../../../api";
 import { useAuth } from "../../../../hooks";
 import { initialValues, validationSchema } from "./MenuForm.form";
+import { useLanguage } from "../../../../contexts";
 
 const menuController = new Menu();
 
 export function MenuForm(props) {
   const { onClose, onReload, menu } = props;
   const { accessToken } = useAuth();
+
+  const { language, changeLanguage, translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
 
   const formik = useFormik({
     initialValues: initialValues(menu),
@@ -83,7 +88,7 @@ export function MenuForm(props) {
       <Form.Group />
 
       <Form.Button type="submit" primary fluid loading={formik.isSubmitting}>
-        {menu ? "Actualizar menú" : "Crear menú"}
+        {menu ? t("update") : t("create")}
       </Form.Button>
     </Form>
   );

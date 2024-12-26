@@ -13,6 +13,7 @@ import { useAuth } from "../../../../hooks";
 import { inititalValues, validationSchema } from "./LoginForm.form";
 import { Presentation } from "../Presentation";
 import "./LoginForm.scss";
+import { useLanguage } from "../../../../contexts";
 //import ImageVacia from "../../../../utils/imagen-vacia.png";
 
 const authController = new Auth();
@@ -20,6 +21,10 @@ const authController = new Auth();
 export function LoginForm() {
   const { login } = useAuth();
   const [error, setError] = useState("");
+
+  const { translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
 
   const formik = useFormik({
     initialValues: inititalValues(),
@@ -46,7 +51,7 @@ export function LoginForm() {
   };
 
   return (
-    <Segment style={{ width:"100%"}} >
+    <Segment style={{ width: "100%" }}>
       <Grid centered columns={2}>
         <GridColumn floated="left" textAlign="center">
           <Presentation />
@@ -63,9 +68,14 @@ export function LoginForm() {
                     margin: "auto",
                   }}
                 /> */}
-                      <div style={{
+                <div
+                  style={{
                     margin: "auto",
-                  }}> LOGO EMPRESA </div>
+                  }}
+                >
+                  {" "}
+                  LOGO EMPRESA{" "}
+                </div>
               </div>
             </GridColumn>
             <GridColumn>
@@ -75,7 +85,7 @@ export function LoginForm() {
                   icon="user"
                   iconPosition="left"
                   size="large"
-                  label="Nombre de Usuario"
+                  label={t("username")}
                   inline
                   placeholder="Correo electronico"
                   onChange={formik.handleChange}
@@ -88,7 +98,7 @@ export function LoginForm() {
                   type="password"
                   icon="lock"
                   iconPosition="left"
-                  label="Contraseña"
+                  label={t("password")}
                   size="large"
                   placeholder="Contraseña"
                   onChange={formik.handleChange}
@@ -103,16 +113,16 @@ export function LoginForm() {
                   fluid
                   loading={formik.isSubmitting}
                 >
-                  Entrar
+                  {t("enter")}
                 </Form.Button>
 
-                <a onClick={recoverPassword}>Olvidé mi contraseña</a>
+                <a onClick={recoverPassword}>{t("i_forgot_my_password")}</a>
 
                 <p className="login-form__error">{error}</p>
               </Form>
             </GridColumn>
             <GridColumn>
-            <div style={{ display: "grid" }}>
+              <div style={{ display: "grid" }}>
                 {/* <Image
                   src={ImageVacia}
                   size="tiny"
@@ -120,9 +130,14 @@ export function LoginForm() {
                     margin: "auto",
                   }}
                 /> */}
-               <div style={{
+                <div
+                  style={{
                     margin: "auto",
-                  }}> LOGO SUSTEMIA </div>
+                  }}
+                >
+                  {" "}
+                  LOGO SUSTEMIA{" "}
+                </div>
               </div>
             </GridColumn>
           </Grid>

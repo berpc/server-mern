@@ -6,12 +6,14 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import enTranslations from "../translations/en.json";
 import esTranslations from "../translations/es.json";
 import frTranslations from "../translations/fr.json";
+import ptTranslations from "../translations/pt.json";
 
 // Mapeo de los idiomas a las traducciones
 const translationsMap = {
   en: enTranslations,
   es: esTranslations,
   fr: frTranslations,
+  pt: ptTranslations
 };
 
 const LanguageContext = createContext();

@@ -8,6 +8,7 @@ import { isAdmin, hasPermission, isMaster } from "../../../utils/checkPermission
 import { ErrorAccessDenied } from "../Error";
 import { Permission } from "../../../api";
 import { Link } from 'react-router-dom';
+import { useLanguage } from "../../../contexts";
 
 
 const permissionController = new Permission();
@@ -23,6 +24,10 @@ export function Sites() {
   const [permissionsByRole, setPermissionsByRole] = useState([]);
   const onOpenCloseModal = () => setShowModal((prevState) => !prevState);
   const onReload = () => setReload((prevState) => !prevState);
+
+  const { language, changeLanguage, translations } = useLanguage();
+  
+  const t = (key) => translations[key] || key ; // Función para obtener la traducción
 
   useEffect(() => {
     (async () => {
@@ -45,7 +50,7 @@ export function Sites() {
 
   const panes = [
     {
-      menuItem: "Sitios activos",
+      menuItem: t("active_sites"),
       render: () => (
         <Tab.Pane attached={false}>
           <ListSites sitesActive={true} reload={reload} onReload={onReload} />
@@ -53,7 +58,7 @@ export function Sites() {
       ),
     },
     {
-      menuItem: "Sitios inactivos",
+      menuItem: t("inactive_sites"),
       render: () => (
         <Tab.Pane attached={false}>
           <ListSites sitesActive={false} reload={reload} onReload={onReload} />
@@ -76,7 +81,7 @@ export function Sites() {
               primary
               onClick={onOpenCloseModal}
              >
-              <Icon name='plus' /> Nuevo Sitio
+              <Icon name='plus' /> {t("new_site")}
              </Button>
            
           ) : null}
@@ -86,7 +91,7 @@ export function Sites() {
         <BasicModal
           show={showModal}
           close={onOpenCloseModal}
-          title="Crear nuevo sitio"
+          title={t("create_new_site")}
         >
           <SiteForm close={onOpenCloseModal} onReload={onReload} />
         </BasicModal>

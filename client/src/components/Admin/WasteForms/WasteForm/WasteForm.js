@@ -17,9 +17,11 @@ import {
   Modal,
   ModalActions,
   ModalContent,
-  ModalHeader
+  ModalHeader,
+  List,
+  Message,
 } from "semantic-ui-react";
-import { useFormik, Field, FieldArray, FormikProvider, getIn } from "formik";
+import { useFormik } from "formik";
 import { Wasteform } from "../../../../api";
 import { useAuth } from "../../../../hooks";
 import { ENV, PERIODS } from "../../../../utils";
@@ -32,25 +34,27 @@ import { initialValues, validationSchema } from "./WasteForm.form";
 import { useNavigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import { decrypt, encrypt } from "../../../../utils/cryptoUtils";
-import { convertPeriodsEngToEsp, convertWasteFieldsEngToEsp } from "../../../../utils/converts";
 import "./WasteForm.scss";
+import { useLanguage } from "../../../../contexts";
 
 const wasteFormController = new Wasteform();
 
 export function WasteForm(props) {
-  const { onClose, onReload, wasteForm, siteSelected , year, period } = props;
+  const { onClose, onReload, wasteForm, siteSelected, year, period } = props;
   const { accessToken } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [titleModal, setTitleModal] = useState("");
   const [fieldName, setFieldName] = useState("");
   const [listPeriods, setListPeriods] = useState([]);
+  const [newFiles, setNewFiles] = useState([]);
   const [showConfirm, setShowConfirm] = useState(false);
   const { user } = useAuth();
 
   const location = useLocation();
 
-  console.log(siteSelected, year)
-  //const { siteSelected } = location.state || {};
+  const { translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
 
   if (!siteSelected) {
     // // Manejo de caso donde no hay datos en state (por ejemplo, acceso directo a la URL)
@@ -64,7 +68,7 @@ export function WasteForm(props) {
 
   const openUpdateSite = (data, name) => {
     setFieldName(name);
-    setTitleModal(`Comentarios ${data}`);
+    setTitleModal(`${t("comments")} ${data}`);
     onOpenCloseModal();
   };
 
@@ -91,9 +95,31 @@ export function WasteForm(props) {
             //   // }
             // }
           }
+          // Recorrer el JSON
+          for (const clave in newFiles) {
+            if (newFiles.hasOwnProperty(clave)) {
+              let filesField = await uploadFiles(newFiles[clave]);
+
+              // Combina los archivos nuevos con los existentes
+              let finalFilesField = [...formValue[clave].files, ...filesField];
+
+              formValue[clave].files = finalFilesField;
+            }
+          }
           await wasteFormController.createWasteForm(accessToken, formValue);
           //console.log(formValue);
         } else {
+          // Recorrer el JSON
+          for (const clave in newFiles) {
+            if (newFiles.hasOwnProperty(clave)) {
+              let filesField = await uploadFiles(newFiles[clave]);
+
+              // Combina los archivos nuevos con los existentes
+              let finalFilesField = [...formValue[clave].files, ...filesField];
+
+              formValue[clave].files = finalFilesField;
+            }
+          }
           await wasteFormController.updateWasteForm(
             accessToken,
             wasteForm._id,
@@ -113,17 +139,44 @@ export function WasteForm(props) {
     },
   });
 
+  const uploadFiles = async (filesToUpload, formValue, field) => {
+    const formData = new FormData();
+    Array.from(filesToUpload).forEach((file) => {
+      formData.append("files", file);
+    });
+
+    // Luego de preparar los datos, puedes hacer la solicitud POST
+    if (filesToUpload.length === 0) {
+      console.log("no hay archivos");
+      //setErrorMessage("Por favor, selecciona al menos un archivo.");
+      return;
+    }
+
+    try {
+      // Realizar la solicitud POST al backend
+      const response = await wasteFormController.uploadFileApi(
+        accessToken,
+        formData
+      );
+      if (response.code && response.code === 200) {
+        return response.files;
+      }
+      return [];
+    } catch (error) {
+      //error
+    }
+  };
+
   const goBack = () => {
     navigate(`/admin/data/wasteforms`, {
       state: { siteSelected: siteSelected },
     });
   };
 
-    // Generar una lista de años (por ejemplo, del 2000 al 2024)
-    const currentYear = new Date().getFullYear();
-    const years = Array.from({ length: 50 }, (_, i) => currentYear - i);
+  // Generar una lista de años (por ejemplo, del 2000 al 2024)
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 50 }, (_, i) => currentYear - i);
 
-    
   useEffect(() => {
     (async () => {
       try {
@@ -133,14 +186,14 @@ export function WasteForm(props) {
             siteSelected,
             formik.values.year
           );
-          console.log(response)
-          const periods = PERIODS.map((item) => item);
-          const availablePeriods = periods
-            .filter((period) => !response.periods.includes(period))
-            .map((period) => period);
-  
-          setListPeriods(availablePeriods);
-          console.log(availablePeriods)
+        console.log(response);
+        const periods = PERIODS.map((item) => item);
+        const availablePeriods = periods
+          .filter((period) => !response.periods.includes(period))
+          .map((period) => period);
+
+        setListPeriods(availablePeriods);
+        console.log(availablePeriods);
       } catch (error) {
         console.error(error);
         setListPeriods([]);
@@ -152,9 +205,12 @@ export function WasteForm(props) {
     <Form className="waste-form" onSubmit={formik.handleSubmit}>
       {wasteForm ? (
         <Segment>
-          <Header as="h4"> Fecha: {formatDateView(formik.values.date)}</Header>
           <Header as="h4">
-            Usuario creador:{" "}
+            {" "}
+            {t("date")}: {formatDateView(formik.values.date)}
+          </Header>
+          <Header as="h4">
+            {t("creator_user")}:{" "}
             {formik.values.creator_user
               ? formik.values.creator_user.lastname
                 ? formik.values.creator_user.lastname +
@@ -165,14 +221,14 @@ export function WasteForm(props) {
           </Header>
         </Segment>
       ) : null}
-       {!wasteForm ? (
+      {!wasteForm ? (
         <>
           <Grid columns={2} divided>
             <GridRow>
               <GridColumn>
                 <Form.Dropdown
-                  label="Año"
-                  placeholder="Seleccione"
+                  label={t("year")}
+                  placeholder={t("select")}
                   options={years.map((year) => {
                     return {
                       key: year,
@@ -190,12 +246,12 @@ export function WasteForm(props) {
               </GridColumn>
               <GridColumn>
                 <Form.Dropdown
-                  label="Periodo"
-                  placeholder="Seleccione"
+                  label={t("period")}
+                  placeholder={t("select")}
                   options={listPeriods.map((period) => {
                     return {
                       key: period,
-                      text: convertPeriodsEngToEsp(period),
+                      text: t(period),
                       value: period,
                     };
                   })}
@@ -213,38 +269,48 @@ export function WasteForm(props) {
       ) : null}
       <Table size="small" celled>
         <Table.Header>
-        <Table.Row>
-            <Table.HeaderCell width="12">Codigo</Table.HeaderCell>
-            <Table.HeaderCell width="6">Concepto</Table.HeaderCell>
-            <Table.HeaderCell width="2">Valor</Table.HeaderCell>
-            <Table.HeaderCell width="2">Unidad</Table.HeaderCell>
-            <Table.HeaderCell width="2">Estado</Table.HeaderCell>
-            <Table.HeaderCell>Acciones</Table.HeaderCell>
+          <Table.Row>
+            <Table.HeaderCell width="1">{t("code")}</Table.HeaderCell>
+            <Table.HeaderCell width="6">{t("concept")}</Table.HeaderCell>
+            <Table.HeaderCell width="2">{t("value")}</Table.HeaderCell>
+            <Table.HeaderCell width="2">{t("unit")}</Table.HeaderCell>
+            <Table.HeaderCell width="2">{t("state")}</Table.HeaderCell>
+            <Table.HeaderCell>{t("actions")}</Table.HeaderCell>
           </Table.Row>
         </Table.Header>
         <Table.Body>
           <Table.Row>
             <Table.Cell>
               <label className="label">
-                {formik.values.paper_and_cardboard_sent_to_recycling_or_reuse.code}{" "}
+                {
+                  formik.values.paper_and_cardboard_sent_to_recycling_or_reuse
+                    .code
+                }{" "}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">{convertWasteFieldsEngToEsp("paper_and_cardboard_sent_to_recycling_or_reuse")}</label>
+              <label className="label">
+                {t("paper_and_cardboard_sent_to_recycling_or_reuse")}
+              </label>
             </Table.Cell>
             <Table.Cell>
-                <Form.Input
+              <Form.Input
                 type="number"
                 name="paper_and_cardboard_sent_to_recycling_or_reuse.value"
                 onChange={formik.handleChange}
-                value={formik.values.paper_and_cardboard_sent_to_recycling_or_reuse.value}
-                error={formik.errors.paper_and_cardboard_sent_to_recycling_or_reuse}
+                value={
+                  formik.values.paper_and_cardboard_sent_to_recycling_or_reuse
+                    .value
+                }
+                error={
+                  formik.errors.paper_and_cardboard_sent_to_recycling_or_reuse
+                }
               />
             </Table.Cell>
             <Table.Cell>
-            <Form.Dropdown
+              <Form.Dropdown
                 placeholder="Kg"
-                options={[{key:1, value:true,name:""}].map((ds) => {
+                options={[{ key: 1, value: true, name: "" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -253,31 +319,49 @@ export function WasteForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("paper_and_cardboard_sent_to_recycling_or_reuse.unit", data.value)
+                  formik.setFieldValue(
+                    "paper_and_cardboard_sent_to_recycling_or_reuse.unit",
+                    data.value
+                  )
                 }
-                value={formik.values.paper_and_cardboard_sent_to_recycling_or_reuse.unit}
-                error={formik.errors.paper_and_cardboard_sent_to_recycling_or_reuse}
+                value={
+                  formik.values.paper_and_cardboard_sent_to_recycling_or_reuse
+                    .unit
+                }
+                error={
+                  formik.errors.paper_and_cardboard_sent_to_recycling_or_reuse
+                }
               />
               {/* {formik.values.days_total.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
             </Table.Cell>
 
-
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("paper_and_cardboard_sent_to_recycling_or_reuse.isApproved", data.value)
+                  formik.setFieldValue(
+                    "paper_and_cardboard_sent_to_recycling_or_reuse.isApproved",
+                    data.value
+                  )
                 }
-                value={formik.values.paper_and_cardboard_sent_to_recycling_or_reuse.isApproved}
-                error={formik.errors.paper_and_cardboard_sent_to_recycling_or_reuse}
+                value={
+                  formik.values.paper_and_cardboard_sent_to_recycling_or_reuse
+                    .isApproved
+                }
+                error={
+                  formik.errors.paper_and_cardboard_sent_to_recycling_or_reuse
+                }
               />
               {/* {formik.values.paper_and_cardboard_sent_to_recycling_or_reuse.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
             </Table.Cell>
@@ -287,26 +371,38 @@ export function WasteForm(props) {
                 type="button"
                 primary
                 onClick={() => {
-                  openUpdateSite(convertWasteFieldsEngToEsp("paper_and_cardboard_sent_to_recycling_or_reuse"), "paper_and_cardboard_sent_to_recycling_or_reuse");
+                  openUpdateSite(
+                    t("paper_and_cardboard_sent_to_recycling_or_reuse"),
+                    "paper_and_cardboard_sent_to_recycling_or_reuse"
+                  );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"paper_and_cardboard_sent_to_recycling_or_reuse"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"paper_and_cardboard_sent_to_recycling_or_reuse"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell>
+            <Table.Cell>
               <label className="label">
                 {formik.values.plastic_sent_to_recycle_or_reuse.code}{" "}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">{convertWasteFieldsEngToEsp("plastic_sent_to_recycle_or_reuse")}</label>
+              <label className="label">
+                {t("plastic_sent_to_recycle_or_reuse")}
+              </label>
             </Table.Cell>
             <Table.Cell>
-            <Form.Input
+              <Form.Input
                 type="number"
                 name="plastic_sent_to_recycle_or_reuse.value"
                 onChange={formik.handleChange}
@@ -315,9 +411,9 @@ export function WasteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-            <Form.Dropdown
+              <Form.Dropdown
                 placeholder="Kg"
-                options={[{key:1, value:true,name:""}].map((ds) => {
+                options={[{ key: 1, value: true, name: "" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -326,29 +422,40 @@ export function WasteForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("plastic_sent_to_recycle_or_reuse.unit", data.value)
+                  formik.setFieldValue(
+                    "plastic_sent_to_recycle_or_reuse.unit",
+                    data.value
+                  )
                 }
                 value={formik.values.plastic_sent_to_recycle_or_reuse.unit}
                 error={formik.errors.plastic_sent_to_recycle_or_reuse}
               />
               {/* {formik.values.days_total.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
             </Table.Cell>
-            
+
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("plastic_sent_to_recycle_or_reuse.isApproved", data.value)
+                  formik.setFieldValue(
+                    "plastic_sent_to_recycle_or_reuse.isApproved",
+                    data.value
+                  )
                 }
-                value={formik.values.plastic_sent_to_recycle_or_reuse.isApproved}
+                value={
+                  formik.values.plastic_sent_to_recycle_or_reuse.isApproved
+                }
                 error={formik.errors.plastic_sent_to_recycle_or_reuse}
               />
               {/* {formik.values.plastic_sent_to_recycle_or_reuse.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
@@ -359,24 +466,35 @@ export function WasteForm(props) {
                 primary
                 type="button"
                 onClick={() => {
-                  openUpdateSite(convertWasteFieldsEngToEsp("plastic_sent_to_recycle_or_reuse"), "plastic_sent_to_recycle_or_reuse");
+                  openUpdateSite(
+                    t("plastic_sent_to_recycle_or_reuse"),
+                    "plastic_sent_to_recycle_or_reuse"
+                  );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"plastic_sent_to_recycle_or_reuse"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"plastic_sent_to_recycle_or_reuse"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
-
           <Table.Row>
-             <Table.Cell>
+            <Table.Cell>
               <label className="label">
                 {formik.values.fabric_sent_to_recycle_or_reuse.code}{" "}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">{convertWasteFieldsEngToEsp("fabric_sent_to_recycle_or_reuse")}</label>
+              <label className="label">
+                {t("fabric_sent_to_recycle_or_reuse")}
+              </label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -386,13 +504,11 @@ export function WasteForm(props) {
                 value={formik.values.fabric_sent_to_recycle_or_reuse.value}
                 error={formik.errors.fabric_sent_to_recycle_or_reuse}
               />
-
-
             </Table.Cell>
             <Table.Cell>
-            <Form.Dropdown
+              <Form.Dropdown
                 placeholder="Kg"
-                options={[{key:1, value:true,name:""}].map((ds) => {
+                options={[{ key: 1, value: true, name: "" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -401,7 +517,10 @@ export function WasteForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("fabric_sent_to_recycle_or_reuse.unit", data.value)
+                  formik.setFieldValue(
+                    "fabric_sent_to_recycle_or_reuse.unit",
+                    data.value
+                  )
                 }
                 value={formik.values.fabric_sent_to_recycle_or_reuse.unit}
                 error={formik.errors.fabric_sent_to_recycle_or_reuse}
@@ -409,8 +528,6 @@ export function WasteForm(props) {
               {/* {formik.values.days_total.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
             </Table.Cell>
 
-            
-        
             <Table.Cell>
               {/* <Form.Checkbox
                 toggle
@@ -423,7 +540,7 @@ export function WasteForm(props) {
                 }}
               /> */}
               {/* <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={["Aprobado", "No aprobado"].map((ds) => {
                   return {
                     key: ds,
@@ -439,17 +556,23 @@ export function WasteForm(props) {
                 error={formik.errors.days_month}
               /> */}
               <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("fabric_sent_to_recycle_or_reuse.isApproved", data.value)
+                  formik.setFieldValue(
+                    "fabric_sent_to_recycle_or_reuse.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.fabric_sent_to_recycle_or_reuse.isApproved}
                 error={formik.errors.fabric_sent_to_recycle_or_reuse}
@@ -462,23 +585,35 @@ export function WasteForm(props) {
                 type="button"
                 primary
                 onClick={() => {
-                  openUpdateSite(convertWasteFieldsEngToEsp("fabric_sent_to_recycle_or_reuse"), "fabric_sent_to_recycle_or_reuse");
+                  openUpdateSite(
+                    t("fabric_sent_to_recycle_or_reuse"),
+                    "fabric_sent_to_recycle_or_reuse"
+                  );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"fabric_sent_to_recycle_or_reuse"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"fabric_sent_to_recycle_or_reuse"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell>
+            <Table.Cell>
               <label className="label">
                 {formik.values.metal_sent_to_recycle_or_reuse.code}{" "}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">{convertWasteFieldsEngToEsp("metal_sent_to_recycle_or_reuse")}</label>
+              <label className="label">
+                {t("metal_sent_to_recycle_or_reuse")}
+              </label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -490,9 +625,9 @@ export function WasteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-            <Form.Dropdown
+              <Form.Dropdown
                 placeholder="Kg"
-                options={[{key:1, value:true,name:""}].map((ds) => {
+                options={[{ key: 1, value: true, name: "" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -501,7 +636,10 @@ export function WasteForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("metal_sent_to_recycle_or_reuse.unit", data.value)
+                  formik.setFieldValue(
+                    "metal_sent_to_recycle_or_reuse.unit",
+                    data.value
+                  )
                 }
                 value={formik.values.metal_sent_to_recycle_or_reuse.unit}
                 error={formik.errors.metal_sent_to_recycle_or_reuse}
@@ -509,20 +647,25 @@ export function WasteForm(props) {
               {/* {formik.values.days_total.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
             </Table.Cell>
 
-
             <Table.Cell>
-                 <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("metal_sent_to_recycle_or_reuse.isApproved", data.value)
+                  formik.setFieldValue(
+                    "metal_sent_to_recycle_or_reuse.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.metal_sent_to_recycle_or_reuse.isApproved}
                 error={formik.errors.metal_sent_to_recycle_or_reuse}
@@ -535,23 +678,35 @@ export function WasteForm(props) {
                 type="button"
                 primary
                 onClick={() => {
-                  openUpdateSite(convertWasteFieldsEngToEsp("metal_sent_to_recycle_or_reuse"), "metal_sent_to_recycle_or_reuse");
+                  openUpdateSite(
+                    t("metal_sent_to_recycle_or_reuse"),
+                    "metal_sent_to_recycle_or_reuse"
+                  );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"metal_sent_to_recycle_or_reuse"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"metal_sent_to_recycle_or_reuse"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell>
+            <Table.Cell>
               <label className="label">
                 {formik.values.wood_sent_to_recycle_or_reuse.code}{" "}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">{convertWasteFieldsEngToEsp("wood_sent_to_recycle_or_reuse")}</label>
+              <label className="label">
+                {t("wood_sent_to_recycle_or_reuse")}
+              </label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -563,9 +718,9 @@ export function WasteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-            <Form.Dropdown
+              <Form.Dropdown
                 placeholder="Kg"
-                options={[{key:1, value:true,name:""}].map((ds) => {
+                options={[{ key: 1, value: true, name: "" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -574,7 +729,10 @@ export function WasteForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("wood_sent_to_recycle_or_reuse.unit", data.value)
+                  formik.setFieldValue(
+                    "wood_sent_to_recycle_or_reuse.unit",
+                    data.value
+                  )
                 }
                 value={formik.values.wood_sent_to_recycle_or_reuse.unit}
                 error={formik.errors.wood_sent_to_recycle_or_reuse}
@@ -582,20 +740,25 @@ export function WasteForm(props) {
               {/* {formik.values.days_total.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
             </Table.Cell>
 
-            
             <Table.Cell>
-                     <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("wood_sent_to_recycle_or_reuse.isApproved", data.value)
+                  formik.setFieldValue(
+                    "wood_sent_to_recycle_or_reuse.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.wood_sent_to_recycle_or_reuse.isApproved}
                 error={formik.errors.wood_sent_to_recycle_or_reuse}
@@ -608,37 +771,57 @@ export function WasteForm(props) {
                 type="button"
                 primary
                 onClick={() => {
-                  openUpdateSite(convertWasteFieldsEngToEsp("wood_sent_to_recycle_or_reuse"), "wood_sent_to_recycle_or_reuse");
+                  openUpdateSite(
+                    t("wood_sent_to_recycle_or_reuse"),
+                    "wood_sent_to_recycle_or_reuse"
+                  );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"wood_sent_to_recycle_or_reuse"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"wood_sent_to_recycle_or_reuse"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell>
+            <Table.Cell>
               <label className="label">
-                {formik.values.other_general_waste_sent_to_recycle_or_reuse.code}{" "}
+                {
+                  formik.values.other_general_waste_sent_to_recycle_or_reuse
+                    .code
+                }{" "}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">{convertWasteFieldsEngToEsp("other_general_waste_sent_to_recycle_or_reuse")}</label>
+              <label className="label">
+                {t("other_general_waste_sent_to_recycle_or_reuse")}
+              </label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
                 type="number"
                 name="other_general_waste_sent_to_recycle_or_reuse.value"
                 onChange={formik.handleChange}
-                value={formik.values.other_general_waste_sent_to_recycle_or_reuse.value}
-                error={formik.errors.other_general_waste_sent_to_recycle_or_reuse}
+                value={
+                  formik.values.other_general_waste_sent_to_recycle_or_reuse
+                    .value
+                }
+                error={
+                  formik.errors.other_general_waste_sent_to_recycle_or_reuse
+                }
               />
             </Table.Cell>
             <Table.Cell>
-            <Form.Dropdown
+              <Form.Dropdown
                 placeholder="Kg"
-                options={[{key:1, value:true,name:""}].map((ds) => {
+                options={[{ key: 1, value: true, name: "" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -647,31 +830,49 @@ export function WasteForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("other_general_waste_sent_to_recycle_or_reuse.unit", data.value)
+                  formik.setFieldValue(
+                    "other_general_waste_sent_to_recycle_or_reuse.unit",
+                    data.value
+                  )
                 }
-                value={formik.values.other_general_waste_sent_to_recycle_or_reuse.unit}
-                error={formik.errors.other_general_waste_sent_to_recycle_or_reuse}
+                value={
+                  formik.values.other_general_waste_sent_to_recycle_or_reuse
+                    .unit
+                }
+                error={
+                  formik.errors.other_general_waste_sent_to_recycle_or_reuse
+                }
               />
               {/* {formik.values.days_total.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
             </Table.Cell>
 
-
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("other_general_waste_sent_to_recycle_or_reuse.isApproved", data.value)
+                  formik.setFieldValue(
+                    "other_general_waste_sent_to_recycle_or_reuse.isApproved",
+                    data.value
+                  )
                 }
-                value={formik.values.other_general_waste_sent_to_recycle_or_reuse.isApproved}
-                error={formik.errors.other_general_waste_sent_to_recycle_or_reuse}
+                value={
+                  formik.values.other_general_waste_sent_to_recycle_or_reuse
+                    .isApproved
+                }
+                error={
+                  formik.errors.other_general_waste_sent_to_recycle_or_reuse
+                }
               />
               {/* {formik.values.other_general_waste_sent_to_recycle_or_reuse.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
             </Table.Cell>
@@ -681,26 +882,35 @@ export function WasteForm(props) {
                 type="button"
                 primary
                 onClick={() => {
-                  openUpdateSite(convertWasteFieldsEngToEsp("other_general_waste_sent_to_recycle_or_reuse"), "other_general_waste_sent_to_recycle_or_reuse");
+                  openUpdateSite(
+                    t("other_general_waste_sent_to_recycle_or_reuse"),
+                    "other_general_waste_sent_to_recycle_or_reuse"
+                  );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"other_general_waste_sent_to_recycle_or_reuse"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"other_general_waste_sent_to_recycle_or_reuse"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
-         
-
-        
 
           <Table.Row>
-          <Table.Cell>
+            <Table.Cell>
               <label className="label">
                 {formik.values.leathers_sent_to_recycle_or_reuse.code}{" "}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">{convertWasteFieldsEngToEsp("leathers_sent_to_recycle_or_reuse")}</label>
+              <label className="label">
+                {t("leathers_sent_to_recycle_or_reuse")}
+              </label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -712,9 +922,9 @@ export function WasteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-            <Form.Dropdown
+              <Form.Dropdown
                 placeholder="Kg"
-                options={[{key:1, value:true,name:""}].map((ds) => {
+                options={[{ key: 1, value: true, name: "" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -723,7 +933,10 @@ export function WasteForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("leathers_sent_to_recycle_or_reuse.unit", data.value)
+                  formik.setFieldValue(
+                    "leathers_sent_to_recycle_or_reuse.unit",
+                    data.value
+                  )
                 }
                 value={formik.values.leathers_sent_to_recycle_or_reuse.unit}
                 error={formik.errors.leathers_sent_to_recycle_or_reuse}
@@ -731,22 +944,29 @@ export function WasteForm(props) {
               {/* {formik.values.days_total.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
             </Table.Cell>
 
-
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("leathers_sent_to_recycle_or_reuse.isApproved", data.value)
+                  formik.setFieldValue(
+                    "leathers_sent_to_recycle_or_reuse.isApproved",
+                    data.value
+                  )
                 }
-                value={formik.values.leathers_sent_to_recycle_or_reuse.isApproved}
+                value={
+                  formik.values.leathers_sent_to_recycle_or_reuse.isApproved
+                }
                 error={formik.errors.leathers_sent_to_recycle_or_reuse}
               />
               {/* {formik.values.leathers_sent_to_recycle_or_reuse.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
@@ -758,25 +978,34 @@ export function WasteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertWasteFieldsEngToEsp("leathers_sent_to_recycle_or_reuse"),
+                    t("leathers_sent_to_recycle_or_reuse"),
                     "leathers_sent_to_recycle_or_reuse"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"leathers_sent_to_recycle_or_reuse"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"leathers_sent_to_recycle_or_reuse"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell>
+            <Table.Cell>
               <label className="label">
                 {formik.values.rubber_sent_to_recycle_or_reuse.code}{" "}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">{convertWasteFieldsEngToEsp("rubber_sent_to_recycle_or_reuse")}</label>
+              <label className="label">
+                {t("rubber_sent_to_recycle_or_reuse")}
+              </label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -788,9 +1017,9 @@ export function WasteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-            <Form.Dropdown
+              <Form.Dropdown
                 placeholder="Kg"
-                options={[{key:1, value:true,name:""}].map((ds) => {
+                options={[{ key: 1, value: true, name: "" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -799,7 +1028,10 @@ export function WasteForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("rubber_sent_to_recycle_or_reuse.unit", data.value)
+                  formik.setFieldValue(
+                    "rubber_sent_to_recycle_or_reuse.unit",
+                    data.value
+                  )
                 }
                 value={formik.values.rubber_sent_to_recycle_or_reuse.unit}
                 error={formik.errors.rubber_sent_to_recycle_or_reuse}
@@ -807,20 +1039,25 @@ export function WasteForm(props) {
               {/* {formik.values.days_total.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
             </Table.Cell>
 
-
             <Table.Cell>
-               <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("rubber_sent_to_recycle_or_reuse.isApproved", data.value)
+                  formik.setFieldValue(
+                    "rubber_sent_to_recycle_or_reuse.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.rubber_sent_to_recycle_or_reuse.isApproved}
                 error={formik.errors.rubber_sent_to_recycle_or_reuse}
@@ -834,25 +1071,34 @@ export function WasteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertWasteFieldsEngToEsp("rubber_sent_to_recycle_or_reuse"),
+                    t("rubber_sent_to_recycle_or_reuse"),
                     "rubber_sent_to_recycle_or_reuse"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"rubber_sent_to_recycle_or_reuse"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"rubber_sent_to_recycle_or_reuse"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell>
+            <Table.Cell>
               <label className="label">
                 {formik.values.food_scraps_sent_to_recycle_or_reuse.code}{" "}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">{convertWasteFieldsEngToEsp("food_scraps_sent_to_recycle_or_reuse")}</label>
+              <label className="label">
+                {t("food_scraps_sent_to_recycle_or_reuse")}
+              </label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -864,9 +1110,9 @@ export function WasteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-            <Form.Dropdown
+              <Form.Dropdown
                 placeholder="Kg"
-                options={[{key:1, value:true,name:""}].map((ds) => {
+                options={[{ key: 1, value: true, name: "" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -875,7 +1121,10 @@ export function WasteForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("food_scraps_sent_to_recycle_or_reuse.unit", data.value)
+                  formik.setFieldValue(
+                    "food_scraps_sent_to_recycle_or_reuse.unit",
+                    data.value
+                  )
                 }
                 value={formik.values.food_scraps_sent_to_recycle_or_reuse.unit}
                 error={formik.errors.food_scraps_sent_to_recycle_or_reuse}
@@ -883,22 +1132,29 @@ export function WasteForm(props) {
               {/* {formik.values.days_total.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
             </Table.Cell>
 
-
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("food_scraps_sent_to_recycle_or_reuse.isApproved", data.value)
+                  formik.setFieldValue(
+                    "food_scraps_sent_to_recycle_or_reuse.isApproved",
+                    data.value
+                  )
                 }
-                value={formik.values.food_scraps_sent_to_recycle_or_reuse.isApproved}
+                value={
+                  formik.values.food_scraps_sent_to_recycle_or_reuse.isApproved
+                }
                 error={formik.errors.food_scraps_sent_to_recycle_or_reuse}
               />
               {/* {formik.values.food_scraps_sent_to_recycle_or_reuse.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
@@ -910,39 +1166,50 @@ export function WasteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertWasteFieldsEngToEsp("food_scraps_sent_to_recycle_or_reuse"),
+                    t("food_scraps_sent_to_recycle_or_reuse"),
                     "food_scraps_sent_to_recycle_or_reuse"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"food_scraps_sent_to_recycle_or_reuse"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"food_scraps_sent_to_recycle_or_reuse"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell>
+            <Table.Cell>
               <label className="label">
                 {formik.values.paper_and_cardboard_sent_to_incineration.code}{" "}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">{convertWasteFieldsEngToEsp("paper_and_cardboard_sent_to_incineration")}</label>
+              <label className="label">
+                {t("paper_and_cardboard_sent_to_incineration")}
+              </label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
                 type="number"
                 name="paper_and_cardboard_sent_to_incineration.value"
                 onChange={formik.handleChange}
-                value={formik.values.paper_and_cardboard_sent_to_incineration.value}
+                value={
+                  formik.values.paper_and_cardboard_sent_to_incineration.value
+                }
                 error={formik.errors.paper_and_cardboard_sent_to_incineration}
               />
             </Table.Cell>
             <Table.Cell>
-            <Form.Dropdown
+              <Form.Dropdown
                 placeholder="Kg"
-                options={[{key:1, value:true,name:""}].map((ds) => {
+                options={[{ key: 1, value: true, name: "" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -951,30 +1218,43 @@ export function WasteForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("paper_and_cardboard_sent_to_incineration.unit", data.value)
+                  formik.setFieldValue(
+                    "paper_and_cardboard_sent_to_incineration.unit",
+                    data.value
+                  )
                 }
-                value={formik.values.paper_and_cardboard_sent_to_incineration.unit}
+                value={
+                  formik.values.paper_and_cardboard_sent_to_incineration.unit
+                }
                 error={formik.errors.paper_and_cardboard_sent_to_incineration}
               />
               {/* {formik.values.days_total.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
             </Table.Cell>
 
-
             <Table.Cell>
-             <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("paper_and_cardboard_sent_to_incineration.isApproved", data.value)
+                  formik.setFieldValue(
+                    "paper_and_cardboard_sent_to_incineration.isApproved",
+                    data.value
+                  )
                 }
-                value={formik.values.paper_and_cardboard_sent_to_incineration.isApproved}
+                value={
+                  formik.values.paper_and_cardboard_sent_to_incineration
+                    .isApproved
+                }
                 error={formik.errors.paper_and_cardboard_sent_to_incineration}
               />
               {/* {formik.values.paper_and_cardboard_sent_to_incineration.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
@@ -986,25 +1266,34 @@ export function WasteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertWasteFieldsEngToEsp("paper_and_cardboard_sent_to_incineration"),
+                    t("paper_and_cardboard_sent_to_incineration"),
                     "paper_and_cardboard_sent_to_incineration"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"paper_and_cardboard_sent_to_incineration"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"paper_and_cardboard_sent_to_incineration"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell>
+            <Table.Cell>
               <label className="label">
                 {formik.values.plastic_sent_to_incineration.code}{" "}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">{convertWasteFieldsEngToEsp("plastic_sent_to_incineration")}</label>
+              <label className="label">
+                {t("plastic_sent_to_incineration")}
+              </label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1016,9 +1305,9 @@ export function WasteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-            <Form.Dropdown
+              <Form.Dropdown
                 placeholder="Kg"
-                options={[{key:1, value:true,name:""}].map((ds) => {
+                options={[{ key: 1, value: true, name: "" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -1027,7 +1316,10 @@ export function WasteForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("plastic_sent_to_incineration.unit", data.value)
+                  formik.setFieldValue(
+                    "plastic_sent_to_incineration.unit",
+                    data.value
+                  )
                 }
                 value={formik.values.plastic_sent_to_incineration.unit}
                 error={formik.errors.plastic_sent_to_incineration}
@@ -1035,20 +1327,25 @@ export function WasteForm(props) {
               {/* {formik.values.days_total.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
             </Table.Cell>
 
-
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("plastic_sent_to_incineration.isApproved", data.value)
+                  formik.setFieldValue(
+                    "plastic_sent_to_incineration.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.plastic_sent_to_incineration.isApproved}
                 error={formik.errors.plastic_sent_to_incineration}
@@ -1062,25 +1359,34 @@ export function WasteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertWasteFieldsEngToEsp("plastic_sent_to_incineration"),
+                    t("plastic_sent_to_incineration"),
                     "plastic_sent_to_incineration"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"plastic_sent_to_incineration"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"plastic_sent_to_incineration"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell>
+            <Table.Cell>
               <label className="label">
                 {formik.values.fabric_sent_to_incineration.code}{" "}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">{convertWasteFieldsEngToEsp("fabric_sent_to_incineration")}</label>
+              <label className="label">
+                {t("fabric_sent_to_incineration")}
+              </label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1092,9 +1398,9 @@ export function WasteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-            <Form.Dropdown
+              <Form.Dropdown
                 placeholder="Kg"
-                options={[{key:1, value:true,name:""}].map((ds) => {
+                options={[{ key: 1, value: true, name: "" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -1103,7 +1409,10 @@ export function WasteForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("fabric_sent_to_incineration.unit", data.value)
+                  formik.setFieldValue(
+                    "fabric_sent_to_incineration.unit",
+                    data.value
+                  )
                 }
                 value={formik.values.fabric_sent_to_incineration.unit}
                 error={formik.errors.fabric_sent_to_incineration}
@@ -1111,20 +1420,25 @@ export function WasteForm(props) {
               {/* {formik.values.days_total.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
             </Table.Cell>
 
-
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("fabric_sent_to_incineration.isApproved", data.value)
+                  formik.setFieldValue(
+                    "fabric_sent_to_incineration.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.fabric_sent_to_incineration.isApproved}
                 error={formik.errors.fabric_sent_to_incineration}
@@ -1138,25 +1452,32 @@ export function WasteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertWasteFieldsEngToEsp("fabric_sent_to_incineration"),
+                    t("fabric_sent_to_incineration"),
                     "fabric_sent_to_incineration"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"fabric_sent_to_incineration"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"fabric_sent_to_incineration"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell>
+            <Table.Cell>
               <label className="label">
                 {formik.values.metal_sent_to_incineration.code}{" "}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">{convertWasteFieldsEngToEsp("metal_sent_to_incineration")}</label>
+              <label className="label">{t("metal_sent_to_incineration")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1168,9 +1489,9 @@ export function WasteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-            <Form.Dropdown
+              <Form.Dropdown
                 placeholder="Kg"
-                options={[{key:1, value:true,name:""}].map((ds) => {
+                options={[{ key: 1, value: true, name: "" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -1179,7 +1500,10 @@ export function WasteForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("metal_sent_to_incineration.unit", data.value)
+                  formik.setFieldValue(
+                    "metal_sent_to_incineration.unit",
+                    data.value
+                  )
                 }
                 value={formik.values.metal_sent_to_incineration.unit}
                 error={formik.errors.metal_sent_to_incineration}
@@ -1187,20 +1511,25 @@ export function WasteForm(props) {
               {/* {formik.values.days_total.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
             </Table.Cell>
 
-
             <Table.Cell>
-             <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("metal_sent_to_incineration.isApproved", data.value)
+                  formik.setFieldValue(
+                    "metal_sent_to_incineration.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.metal_sent_to_incineration.isApproved}
                 error={formik.errors.metal_sent_to_incineration}
@@ -1214,25 +1543,32 @@ export function WasteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertWasteFieldsEngToEsp("metal_sent_to_incineration"),
+                    t("metal_sent_to_incineration"),
                     "metal_sent_to_incineration"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"metal_sent_to_incineration"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"metal_sent_to_incineration"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell>
+            <Table.Cell>
               <label className="label">
                 {formik.values.wood_sent_to_incineration.code}{" "}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">{convertWasteFieldsEngToEsp("wood_sent_to_incineration")}</label>
+              <label className="label">{t("wood_sent_to_incineration")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1244,9 +1580,9 @@ export function WasteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-            <Form.Dropdown
+              <Form.Dropdown
                 placeholder="Kg"
-                options={[{key:1, value:true,name:""}].map((ds) => {
+                options={[{ key: 1, value: true, name: "" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -1255,7 +1591,10 @@ export function WasteForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("wood_sent_to_incineration.unit", data.value)
+                  formik.setFieldValue(
+                    "wood_sent_to_incineration.unit",
+                    data.value
+                  )
                 }
                 value={formik.values.wood_sent_to_incineration.unit}
                 error={formik.errors.wood_sent_to_incineration}
@@ -1263,20 +1602,25 @@ export function WasteForm(props) {
               {/* {formik.values.days_total.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
             </Table.Cell>
 
-
             <Table.Cell>
-            <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("wood_sent_to_incineration.isApproved", data.value)
+                  formik.setFieldValue(
+                    "wood_sent_to_incineration.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.wood_sent_to_incineration.isApproved}
                 error={formik.errors.wood_sent_to_incineration}
@@ -1290,39 +1634,50 @@ export function WasteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertWasteFieldsEngToEsp("wood_sent_to_incineration"),
+                    t("wood_sent_to_incineration"),
                     "wood_sent_to_incineration"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"wood_sent_to_incineration"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"wood_sent_to_incineration"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell>
+            <Table.Cell>
               <label className="label">
                 {formik.values.other_general_waste_sent_to_incineration.code}{" "}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">{convertWasteFieldsEngToEsp("other_general_waste_sent_to_incineration")}</label>
+              <label className="label">
+                {t("other_general_waste_sent_to_incineration")}
+              </label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
                 type="number"
                 name="other_general_waste_sent_to_incineration.value"
                 onChange={formik.handleChange}
-                value={formik.values.other_general_waste_sent_to_incineration.value}
+                value={
+                  formik.values.other_general_waste_sent_to_incineration.value
+                }
                 error={formik.errors.other_general_waste_sent_to_incineration}
               />
             </Table.Cell>
             <Table.Cell>
-            <Form.Dropdown
+              <Form.Dropdown
                 placeholder="Kg"
-                options={[{key:1, value:true,name:""}].map((ds) => {
+                options={[{ key: 1, value: true, name: "" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -1331,30 +1686,43 @@ export function WasteForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("other_general_waste_sent_to_incineration.unit", data.value)
+                  formik.setFieldValue(
+                    "other_general_waste_sent_to_incineration.unit",
+                    data.value
+                  )
                 }
-                value={formik.values.other_general_waste_sent_to_incineration.unit}
+                value={
+                  formik.values.other_general_waste_sent_to_incineration.unit
+                }
                 error={formik.errors.other_general_waste_sent_to_incineration}
               />
               {/* {formik.values.days_total.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
             </Table.Cell>
 
-
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("other_general_waste_sent_to_incineration.isApproved", data.value)
+                  formik.setFieldValue(
+                    "other_general_waste_sent_to_incineration.isApproved",
+                    data.value
+                  )
                 }
-                value={formik.values.other_general_waste_sent_to_incineration.isApproved}
+                value={
+                  formik.values.other_general_waste_sent_to_incineration
+                    .isApproved
+                }
                 error={formik.errors.other_general_waste_sent_to_incineration}
               />
               {/* {formik.values.other_general_waste_sent_to_incineration.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
@@ -1366,39 +1734,57 @@ export function WasteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertWasteFieldsEngToEsp("other_general_waste_sent_to_incineration"),
+                    t("other_general_waste_sent_to_incineration"),
                     "other_general_waste_sent_to_incineration"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"other_general_waste_sent_to_incineration"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"other_general_waste_sent_to_incineration"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell>
+            <Table.Cell>
               <label className="label">
-                {formik.values.other_general_waste_sent_to_other_types_of_disposal.code}{" "}
+                {
+                  formik.values
+                    .other_general_waste_sent_to_other_types_of_disposal.code
+                }{" "}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">{convertWasteFieldsEngToEsp("other_general_waste_sent_to_other_types_of_disposal")}</label>
+              <label className="label">
+                {t("other_general_waste_sent_to_other_types_of_disposal")}
+              </label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
                 type="number"
                 name="other_general_waste_sent_to_other_types_of_disposal.value"
                 onChange={formik.handleChange}
-                value={formik.values.other_general_waste_sent_to_other_types_of_disposal.value}
-                error={formik.errors.other_general_waste_sent_to_other_types_of_disposal}
+                value={
+                  formik.values
+                    .other_general_waste_sent_to_other_types_of_disposal.value
+                }
+                error={
+                  formik.errors
+                    .other_general_waste_sent_to_other_types_of_disposal
+                }
               />
             </Table.Cell>
             <Table.Cell>
-            <Form.Dropdown
+              <Form.Dropdown
                 placeholder="Kg"
-                options={[{key:1, value:true,name:""}].map((ds) => {
+                options={[{ key: 1, value: true, name: "" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -1407,31 +1793,52 @@ export function WasteForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("other_general_waste_sent_to_other_types_of_disposal.unit", data.value)
+                  formik.setFieldValue(
+                    "other_general_waste_sent_to_other_types_of_disposal.unit",
+                    data.value
+                  )
                 }
-                value={formik.values.other_general_waste_sent_to_other_types_of_disposal.unit}
-                error={formik.errors.other_general_waste_sent_to_other_types_of_disposal}
+                value={
+                  formik.values
+                    .other_general_waste_sent_to_other_types_of_disposal.unit
+                }
+                error={
+                  formik.errors
+                    .other_general_waste_sent_to_other_types_of_disposal
+                }
               />
               {/* {formik.values.days_total.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
             </Table.Cell>
 
-
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("other_general_waste_sent_to_other_types_of_disposal.isApproved", data.value)
+                  formik.setFieldValue(
+                    "other_general_waste_sent_to_other_types_of_disposal.isApproved",
+                    data.value
+                  )
                 }
-                value={formik.values.other_general_waste_sent_to_other_types_of_disposal.isApproved}
-                error={formik.errors.other_general_waste_sent_to_other_types_of_disposal}
+                value={
+                  formik.values
+                    .other_general_waste_sent_to_other_types_of_disposal
+                    .isApproved
+                }
+                error={
+                  formik.errors
+                    .other_general_waste_sent_to_other_types_of_disposal
+                }
               />
               {/* {formik.values.other_general_waste_sent_to_other_types_of_disposal.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
             </Table.Cell>
@@ -1442,25 +1849,32 @@ export function WasteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertWasteFieldsEngToEsp("other_general_waste_sent_to_other_types_of_disposal"),
+                    t("other_general_waste_sent_to_other_types_of_disposal"),
                     "other_general_waste_sent_to_other_types_of_disposal"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"other_general_waste_sent_to_other_types_of_disposal"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"other_general_waste_sent_to_other_types_of_disposal"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell>
+            <Table.Cell>
               <label className="label">
                 {formik.values.total_sent_to_landfill.code}{" "}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">{convertWasteFieldsEngToEsp("total_sent_to_landfill")}</label>
+              <label className="label">{t("total_sent_to_landfill")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1472,9 +1886,9 @@ export function WasteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-            <Form.Dropdown
+              <Form.Dropdown
                 placeholder="Kg"
-                options={[{key:1, value:true,name:""}].map((ds) => {
+                options={[{ key: 1, value: true, name: "" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -1483,7 +1897,10 @@ export function WasteForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("total_sent_to_landfill.unit", data.value)
+                  formik.setFieldValue(
+                    "total_sent_to_landfill.unit",
+                    data.value
+                  )
                 }
                 value={formik.values.total_sent_to_landfill.unit}
                 error={formik.errors.total_sent_to_landfill}
@@ -1491,20 +1908,25 @@ export function WasteForm(props) {
               {/* {formik.values.days_total.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
             </Table.Cell>
 
-
             <Table.Cell>
-               <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("total_sent_to_landfill.isApproved", data.value)
+                  formik.setFieldValue(
+                    "total_sent_to_landfill.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.total_sent_to_landfill.isApproved}
                 error={formik.errors.total_sent_to_landfill}
@@ -1518,25 +1940,34 @@ export function WasteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertWasteFieldsEngToEsp("total_sent_to_landfill"),
+                    t("total_sent_to_landfill"),
                     "total_sent_to_landfill"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"total_sent_to_landfill"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"total_sent_to_landfill"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell>
+            <Table.Cell>
               <label className="label">
                 {formik.values.total_sent_for_reuse_or_recycling.code}{" "}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">{convertWasteFieldsEngToEsp("total_sent_for_reuse_or_recycling")}</label>
+              <label className="label">
+                {t("total_sent_for_reuse_or_recycling")}
+              </label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1548,9 +1979,9 @@ export function WasteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-            <Form.Dropdown
+              <Form.Dropdown
                 placeholder="Kg"
-                options={[{key:1, value:true,name:""}].map((ds) => {
+                options={[{ key: 1, value: true, name: "" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -1559,7 +1990,10 @@ export function WasteForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("total_sent_for_reuse_or_recycling.unit", data.value)
+                  formik.setFieldValue(
+                    "total_sent_for_reuse_or_recycling.unit",
+                    data.value
+                  )
                 }
                 value={formik.values.total_sent_for_reuse_or_recycling.unit}
                 error={formik.errors.total_sent_for_reuse_or_recycling}
@@ -1567,22 +2001,29 @@ export function WasteForm(props) {
               {/* {formik.values.days_total.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
             </Table.Cell>
 
-
             <Table.Cell>
-                <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("total_sent_for_reuse_or_recycling.isApproved", data.value)
+                  formik.setFieldValue(
+                    "total_sent_for_reuse_or_recycling.isApproved",
+                    data.value
+                  )
                 }
-                value={formik.values.total_sent_for_reuse_or_recycling.isApproved}
+                value={
+                  formik.values.total_sent_for_reuse_or_recycling.isApproved
+                }
                 error={formik.errors.total_sent_for_reuse_or_recycling}
               />
               {/* {formik.values.total_sent_for_reuse_or_recycling.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
@@ -1594,25 +2035,32 @@ export function WasteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertWasteFieldsEngToEsp("total_sent_for_reuse_or_recycling"),
+                    t("total_sent_for_reuse_or_recycling"),
                     "total_sent_for_reuse_or_recycling"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"total_sent_for_reuse_or_recycling"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"total_sent_for_reuse_or_recycling"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell>
+            <Table.Cell>
               <label className="label">
                 {formik.values.total_sent_to_incineration.code}{" "}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">{convertWasteFieldsEngToEsp("total_sent_to_incineration")}</label>
+              <label className="label">{t("total_sent_to_incineration")}</label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -1624,9 +2072,9 @@ export function WasteForm(props) {
               />
             </Table.Cell>
             <Table.Cell>
-            <Form.Dropdown
+              <Form.Dropdown
                 placeholder="Kg"
-                options={[{key:1, value:true,name:""}].map((ds) => {
+                options={[{ key: 1, value: true, name: "" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -1635,28 +2083,41 @@ export function WasteForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("total_sent_to_incineration.unit", data.value)
+                  formik.setFieldValue(
+                    "total_sent_to_incineration.unit",
+                    data.value
+                  )
                 }
-                value={formik.values.paper_and_cardboard_sent_to_recycling_or_reuse.unit}
-                error={formik.errors.paper_and_cardboard_sent_to_recycling_or_reuse}
+                value={
+                  formik.values.paper_and_cardboard_sent_to_recycling_or_reuse
+                    .unit
+                }
+                error={
+                  formik.errors.paper_and_cardboard_sent_to_recycling_or_reuse
+                }
               />
               {/* {formik.values.days_total.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
             </Table.Cell>
 
-
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("total_sent_to_incineration.isApproved", data.value)
+                  formik.setFieldValue(
+                    "total_sent_to_incineration.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.total_sent_to_incineration.isApproved}
                 error={formik.errors.total_sent_to_incineration}
@@ -1670,39 +2131,57 @@ export function WasteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertWasteFieldsEngToEsp("total_sent_to_incineration"),
+                    t("total_sent_to_incineration"),
                     "total_sent_to_incineration"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"total_sent_to_incineration"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"total_sent_to_incineration"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell>
+            <Table.Cell>
               <label className="label">
-                {formik.values.total_general_waste_sent_to_other_types_of_disposal.code}{" "}
+                {
+                  formik.values
+                    .total_general_waste_sent_to_other_types_of_disposal.code
+                }{" "}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">{convertWasteFieldsEngToEsp("total_general_waste_sent_to_other_types_of_disposal")}</label>
+              <label className="label">
+                {t("total_general_waste_sent_to_other_types_of_disposal")}
+              </label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
                 type="number"
                 name="total_general_waste_sent_to_other_types_of_disposal.value"
                 onChange={formik.handleChange}
-                value={formik.values.total_general_waste_sent_to_other_types_of_disposal.value}
-                error={formik.errors.total_general_waste_sent_to_other_types_of_disposal}
+                value={
+                  formik.values
+                    .total_general_waste_sent_to_other_types_of_disposal.value
+                }
+                error={
+                  formik.errors
+                    .total_general_waste_sent_to_other_types_of_disposal
+                }
               />
             </Table.Cell>
             <Table.Cell>
-            <Form.Dropdown
+              <Form.Dropdown
                 placeholder="Kg"
-                options={[{key:1, value:true,name:""}].map((ds) => {
+                options={[{ key: 1, value: true, name: "" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -1711,29 +2190,50 @@ export function WasteForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("total_general_waste_sent_to_other_types_of_disposal.unit", data.value)
+                  formik.setFieldValue(
+                    "total_general_waste_sent_to_other_types_of_disposal.unit",
+                    data.value
+                  )
                 }
-                value={formik.values.paper_and_cardboard_sent_to_recycling_or_reuse.unit}
-                error={formik.errors.paper_and_cardboard_sent_to_recycling_or_reuse}
+                value={
+                  formik.values.paper_and_cardboard_sent_to_recycling_or_reuse
+                    .unit
+                }
+                error={
+                  formik.errors.paper_and_cardboard_sent_to_recycling_or_reuse
+                }
               />
               {/* {formik.values.days_total.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
             </Table.Cell>
             <Table.Cell>
-               <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("total_general_waste_sent_to_other_types_of_disposal.isApproved", data.value)
+                  formik.setFieldValue(
+                    "total_general_waste_sent_to_other_types_of_disposal.isApproved",
+                    data.value
+                  )
                 }
-                value={formik.values.total_general_waste_sent_to_other_types_of_disposal.isApproved}
-                error={formik.errors.total_general_waste_sent_to_other_types_of_disposal}
+                value={
+                  formik.values
+                    .total_general_waste_sent_to_other_types_of_disposal
+                    .isApproved
+                }
+                error={
+                  formik.errors
+                    .total_general_waste_sent_to_other_types_of_disposal
+                }
               />
               {/* {formik.values.total_general_waste_sent_to_other_types_of_disposal.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
             </Table.Cell>
@@ -1744,39 +2244,50 @@ export function WasteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertWasteFieldsEngToEsp("total_general_waste_sent_to_other_types_of_disposal"),
+                    t("total_general_waste_sent_to_other_types_of_disposal"),
                     "total_general_waste_sent_to_other_types_of_disposal"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"total_general_waste_sent_to_other_types_of_disposal"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"total_general_waste_sent_to_other_types_of_disposal"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
           <Table.Row>
-          <Table.Cell>
+            <Table.Cell>
               <label className="label">
                 {formik.values.total_non_hazardous_waste_unit_produced.code}{" "}
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">{convertWasteFieldsEngToEsp("total_non_hazardous_waste_unit_produced")}</label>
+              <label className="label">
+                {t("total_non_hazardous_waste_unit_produced")}
+              </label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
                 type="number"
                 name="total_non_hazardous_waste_unit_produced.value"
                 onChange={formik.handleChange}
-                value={formik.values.total_non_hazardous_waste_unit_produced.value}
+                value={
+                  formik.values.total_non_hazardous_waste_unit_produced.value
+                }
                 error={formik.errors.total_non_hazardous_waste_unit_produced}
               />
             </Table.Cell>
             <Table.Cell>
-            <Form.Dropdown
+              <Form.Dropdown
                 placeholder="Kg"
-                options={[{key:1, value:true,name:""}].map((ds) => {
+                options={[{ key: 1, value: true, name: "" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -1785,28 +2296,45 @@ export function WasteForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("total_non_hazardous_waste_unit_produced.unit", data.value)
+                  formik.setFieldValue(
+                    "total_non_hazardous_waste_unit_produced.unit",
+                    data.value
+                  )
                 }
-                value={formik.values.paper_and_cardboard_sent_to_recycling_or_reuse.unit}
-                error={formik.errors.paper_and_cardboard_sent_to_recycling_or_reuse}
+                value={
+                  formik.values.paper_and_cardboard_sent_to_recycling_or_reuse
+                    .unit
+                }
+                error={
+                  formik.errors.paper_and_cardboard_sent_to_recycling_or_reuse
+                }
               />
               {/* {formik.values.days_total.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
             </Table.Cell>
             <Table.Cell>
-               <Form.Dropdown
-                placeholder="Seleccione"
-                options={[{key:1, value:true,name:"Aprobado"}, {key:2 , value:false,name:"No aprobado"}].map((ds) => {
+              <Form.Dropdown
+                placeholder={t("select")}
+                options={[
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
+                ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("total_non_hazardous_waste_unit_produced.isApproved", data.value)
+                  formik.setFieldValue(
+                    "total_non_hazardous_waste_unit_produced.isApproved",
+                    data.value
+                  )
                 }
-                value={formik.values.total_non_hazardous_waste_unit_produced.isApproved}
+                value={
+                  formik.values.total_non_hazardous_waste_unit_produced
+                    .isApproved
+                }
                 error={formik.errors.total_non_hazardous_waste_unit_produced}
               />
               {/* {formik.values.total_non_hazardous_waste_unit_produced.isApproved?  <Icon color="green" name='checkmark' /> : <Icon color="red" name='close' />} */}
@@ -1818,17 +2346,23 @@ export function WasteForm(props) {
                 primary
                 onClick={() => {
                   openUpdateSite(
-                    convertWasteFieldsEngToEsp("total_non_hazardous_waste_unit_produced"),
+                    t("total_non_hazardous_waste_unit_produced"),
                     "total_non_hazardous_waste_unit_produced"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"total_non_hazardous_waste_unit_produced"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"total_non_hazardous_waste_unit_produced"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
-
         </Table.Body>
 
         {/* <TableFooter fullWidth>
@@ -1845,7 +2379,6 @@ export function WasteForm(props) {
         </TableHeaderCell>
       </TableRow>
     </TableFooter> */}
-
       </Table>
 
       <BasicModal show={showModal} close={onOpenCloseModal} title={titleModal}>
@@ -1856,11 +2389,12 @@ export function WasteForm(props) {
           onReload={onReload}
           wasteForm={wasteForm}
           user={user}
+          t={t}
         />
       </BasicModal>
       <Form.Group widths="2">
         <Form.Button type="submit" fluid primary loading={formik.isSubmitting}>
-          {!wasteForm ? "Guardar" : "Actualizar datos"}
+          {!wasteForm ? t("save") : t("update")}
         </Form.Button>
         <Form.Button
           type="button"
@@ -1871,7 +2405,7 @@ export function WasteForm(props) {
             onClose ? onClose() : goBack();
           }}
         >
-          {"Cancelar"}
+          {t("cancel")}
         </Form.Button>
       </Form.Group>
     </Form>
@@ -1879,7 +2413,7 @@ export function WasteForm(props) {
 }
 
 function Comments(props) {
-  const { formik, user, fieldName, onClose } = props;
+  const { formik, user, fieldName, onClose, t } = props;
   const [comment, setComment] = useState("");
 
   const onChangeHandle = () => {
@@ -1930,6 +2464,7 @@ function Comments(props) {
                         : false
                       : false
                   }
+                  t={t}
                 />
                 <Divider fitted />
               </>
@@ -1948,7 +2483,7 @@ function Comments(props) {
         <Form.Button
           type="button"
           icon="edit"
-          content={"Añadir comentario"}
+          content={t("add_comment")}
           primary
           fluid
           onClick={onChangeHandle}
@@ -1958,7 +2493,7 @@ function Comments(props) {
   );
 }
 
-const EditableComment = ({ id, author, date, content, onSave, active }) => {
+const EditableComment = ({ id, author, date, content, onSave, active, t }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(content);
 
@@ -1992,8 +2527,8 @@ const EditableComment = ({ id, author, date, content, onSave, active }) => {
           {isEditing ? (
             <Form reply>
               <Form.TextArea value={editedContent} onChange={handleChange} />
-              <Button content="Guardar" onClick={handleSave} primary />
-              <Button content="Cancelar" onClick={handleCancel} secondary />
+              <Button content={t("save")} onClick={handleSave} primary />
+              <Button content={t("cancel")} onClick={handleCancel} secondary />
             </Form>
           ) : (
             <div>{editedContent}</div>
@@ -2001,7 +2536,7 @@ const EditableComment = ({ id, author, date, content, onSave, active }) => {
         </Comment.Text>
         {active ? (
           <Comment.Actions>
-            <Comment.Action onClick={handleEdit}>Editar</Comment.Action>
+            <Comment.Action onClick={handleEdit}>{t("edit")}</Comment.Action>
           </Comment.Actions>
         ) : null}
       </Comment.Content>
@@ -2043,93 +2578,9 @@ const EditableComment = ({ id, author, date, content, onSave, active }) => {
 //   )
 // }
 
-function FileUpload (props) {
-  const {accessToken, data, field}=props;
-  const [file, setFile] = useState(null);
-  const [fileName, setFileName] = useState(null);
-  const [message, setMessage] = useState('');
-
-  const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf',  
-    //'application/vnd.ms-excel', // .xls
-    //'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' // .xlsx
-    ];
-
-  useEffect(() => {
-    if (data.values[field] && data.values[field].file!==null) {
-     setFileName(data.values[field].file);
-    }
-  }, [field]);
-
-   const handleFileChange = async (event) => {
-    const file = event.target.files[0];
-    
-    if (file) {
-      if (!allowedTypes.includes(file.type)) {
-        console.log('Tipo de archivo no permitido. Debe ser JPG, PNG o PDF.');
-      } else {
-      setMessage(`Archivo seleccionado: ${file.name}`);
-
-      const formData = new FormData();
-      formData.append('file', file);
-
-      try {
-        const response = await wasteFormController.uploadFileApi(accessToken,formData);
-        setMessage(response.msg);
-        if(response.status && response.status===200){
-          setFile(file);
-          setFileName(file.name);
-          data.setFieldValue(`${field}.file`, file.name)
-        }
-      } catch (error) {
-        setMessage('Error al subir el archivo');
-      }
-    }
-    }
-  };
-
-  const handleButtonClick = (event) => {
-    event.preventDefault(); // Evita que el formulario se envíe
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.onchange = handleFileChange;
-    input.click();
-  };
-
-  const handleRemoveFile = async () => {
-    setFile(null); // Elimina el archivo
-    setFileName(null);
-    try {
-      const response = await wasteFormController.deleteFileApi(accessToken,fileName);
-      setMessage(response.message);
-      removeFile();
-    } catch (error) {
-      setMessage('Error al elimianr el archivo');
-    }
-  };
-
-  const removeFile = async () => {
-    data.setFieldValue(`${field}.file`, null)
-  };
-
-  return (
-    <>
-     
-      {fileName? (
-        <>
-          {/* <p>{file.name}</p> */}
-          <FileViewer fileName={fileName} handleRemove={handleRemoveFile}/>
-        </>
-      ):  <Button icon onClick={handleButtonClick}>
-                   <Icon name="paperclip" />
-    </Button>}
-    </>
-  );
-
-};
-
-function FileViewer (props){
-  const {fileName, handleRemove}=props;
-  const [fileUrl, setFileUrl] = useState('');
+function FileViewer(props) {
+  const { fileName, fileUniqueName, handleRemove, t } = props;
+  const [fileUrl, setFileUrl] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
 
   useEffect(() => {
@@ -2137,19 +2588,19 @@ function FileViewer (props){
       setFileUrl(fileName); // Construye la URL del archivo
       (async () => {
         try {
-          const response = await wasteFormController.getFileApi(fileName);
+          const response = await wasteFormController.getFileApi(fileUniqueName);
           setFileUrl(response); // Construye la URL del archivo
+          console.log(setFileUrl);
           //setMessage(response.message);
         } catch (error) {
           //setMessage('Error al elimianr el archivo');
         }
-          })();
-    
+      })();
     }
   }, [fileName]);
 
   const handleOpenPreview = (event) => {
-    event.preventDefault(); 
+    event.preventDefault();
     setPreviewOpen(true);
   };
 
@@ -2160,32 +2611,188 @@ function FileViewer (props){
 
   return (
     <>
+      <List.Content floated="left">{fileName}</List.Content>
+      <List.Content floated="right">
+        {" "}
+        <Button
+          color="red"
+          onClick={() => handleRemove(fileUniqueName)}
+          icon="trash alternate"
+        />
+      </List.Content>
       {/* //<Button onClick={handleOpenPreview}> {fileName}</Button> */}
-       
-    <Modal
-      onClose={ handleClosePreview}
-      onOpen={handleOpenPreview}
-      open={previewOpen}
-      trigger={<Button primary icon><Icon name="file alternate"/></Button>}
-    >
-      <ModalHeader>{fileName}</ModalHeader>
-      <ModalContent>
-        {fileName && (fileName.endsWith('.jpg') || fileName.endsWith('.png') || fileName.endsWith('.jpeg'))  && (
-            <Image src={fileUrl} alt="Vista previa" style={{ maxWidth: '100%' }} />
-          )}
-          {fileName && fileName.endsWith('.pdf') && (
-            <iframe src={fileUrl} title="Vista previa" style={{ width: '100%', height: '500px' }} />
-          )}
-      </ModalContent>
-      <ModalActions>
-      <Button color="red" onClick={handleRemove}>
-          <Icon disabled name='trash alternate' /> Eliminar
-          </Button>
-        <Button color='black' onClick={handleClosePreview}>
-        <Icon disabled name='close' />Cerrar
-        </Button>
-      </ModalActions>
-    </Modal>
+      <List.Content floated="right">
+        <Modal
+          onClose={handleClosePreview}
+          onOpen={handleOpenPreview}
+          open={previewOpen}
+          trigger={
+            <Button primary icon>
+              <Icon name="eye" />
+            </Button>
+          }
+        >
+          <ModalHeader>{fileName}</ModalHeader>
+          <ModalContent>
+            {fileName &&
+              (fileName.endsWith(".jpg") ||
+                fileName.endsWith(".png") ||
+                fileName.endsWith(".jpeg")) && (
+                <Image
+                  src={fileUrl}
+                  alt="Vista previa"
+                  style={{ maxWidth: "100%" }}
+                />
+              )}
+            {fileName && fileName.endsWith(".pdf") && (
+              <iframe
+                src={fileUrl}
+                title={t("preview")}
+                style={{ width: "100%", height: "500px" }}
+              />
+            )}
+          </ModalContent>
+          <ModalActions>
+            {/* <Button color="red" onClick={() => handleRemove(fileName)}>
+            <Icon disabled name="trash alternate" /> Eliminar
+          </Button> */}
+            <Button color="black" onClick={handleClosePreview}>
+              <Icon disabled name="close" />
+              {t("close")}
+            </Button>
+          </ModalActions>
+        </Modal>
+      </List.Content>
     </>
   );
-};
+}
+
+function FileUpload(props) {
+  const { accessToken, data, field, newFiles, setNewFiles, t } = props;
+  const [files, setFiles] = useState([]);
+  const [filesView, setFilesView] = useState([]);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [openModal, setOpenModal] = useState(false); // Para controlar el estado del modal
+
+  useEffect(() => {
+    if (data.values[field].files) {
+      setFilesView(data.values[field].files); // Construye la URL del archivo
+    }
+  }, [data]);
+
+  const handleButtonClick = (event) => {
+    event.preventDefault(); // Evita que el formulario se envíe
+    const input = document.createElement("input");
+    input.type = "file";
+    input.multiple = true;
+    input.onchange = handleFileChange;
+    input.click();
+  };
+
+  // Maneja el cambio cuando se seleccionan archivos
+  const handleFileChange = async (e) => {
+    e.preventDefault(); // Evita que el formulario se envíe
+    const selectedFiles = e.target.files;
+    setNewFiles({ ...newFiles, [field]: Array.from(selectedFiles) });
+    //data.setFieldValue(`${field}.files`,Array.from(selectedFiles))
+    setFiles([...selectedFiles]);
+  };
+
+  // Función para cerrar el modal
+  const closeModal = (event) => {
+    event.preventDefault();
+    setOpenModal(!openModal);
+  };
+
+  const handleRemoveFile = async (file) => {
+    try {
+      const updatedFiles = filesView.filter((f) => f.uniqueName !== file);
+      setFilesView(updatedFiles);
+      const response = await wasteFormController.deleteFileApi(
+        accessToken,
+        file
+      );
+      //setMessage(response.message);
+      removeFile(updatedFiles);
+    } catch (error) {
+      // setMessage('Error al elimianr el archivo');
+    }
+  };
+
+  const removeFile = async (updatedFiles) => {
+    data.setFieldValue(`${field}.files`, updatedFiles);
+  };
+
+  return (
+    <>
+      {/* Input para seleccionar los archivos */}
+      {/* <Input
+        type="file"
+        multiple
+        icon={"paperclip"}
+        onChange={handleFileUpload}
+      /> */}
+
+      <Button
+        default
+        onClick={handleButtonClick}
+        icon="paperclip"
+        style={{ marginTop: "10px" }}
+        color={files.length > 0 ? "green" : "grey"}
+      ></Button>
+
+      {/* Mensajes de éxito o error */}
+      {successMessage && (
+        <Message success>
+          <Message.Header>Éxito</Message.Header>
+          <p>{successMessage}</p>
+        </Message>
+      )}
+
+      {errorMessage && (
+        <Message error>
+          <Message.Header>Error</Message.Header>
+          <p>{errorMessage}</p>
+        </Message>
+      )}
+
+      <Button
+        primary
+        onClick={closeModal}
+        style={{ marginTop: "10px" }}
+        icon="eye"
+      ></Button>
+      {/* Modal para mostrar los archivos subidos */}
+      <Modal open={openModal} onClose={closeModal} size="tiny">
+        <Modal.Header>Archivos subidos</Modal.Header>
+        <Modal.Content>
+          {filesView.length > 0 ? (
+            <List divided>
+              {filesView.map((filePath, index) => (
+                <List.Item key={index}>
+                  {/* <a href={`/${filePath.url}`} target="_blank" rel="noopener noreferrer">
+                      {filePath.url}
+                    </a> */}
+
+                  <FileViewer
+                    fileName={filePath.name}
+                    fileUniqueName={filePath.uniqueName}
+                    handleRemove={handleRemoveFile}
+                  />
+                </List.Item>
+              ))}
+            </List>
+          ) : (
+            <p>No se encontraron archivos subidos.</p>
+          )}
+        </Modal.Content>
+        <Modal.Actions>
+          <Button color="green" onClick={closeModal}>
+            {t("close")}
+          </Button>
+        </Modal.Actions>
+      </Modal>
+    </>
+  );
+}

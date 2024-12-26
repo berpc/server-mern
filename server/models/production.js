@@ -32,7 +32,8 @@ const ProductionSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String,
+    files:[{
+      url:String, name:String, uniqueName:String}],
   },
   annual_average:{
     code:String,
@@ -47,7 +48,8 @@ const ProductionSchema = mongoose.Schema({
       comments:String
     }],
     isApproved:Boolean,
-    file:String,
+    files:[{
+      url:String, name:String, uniqueName:String}],
   },
   active:Boolean
 });

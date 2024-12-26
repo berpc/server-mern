@@ -10,8 +10,12 @@ import {
   isAdmin,
   isMaster,
 } from "../../../../utils/checkPermission";
-import { formatDateHourCompleted, formatDateView } from "../../../../utils/formatDate";
+import {
+  formatDateHourCompleted,
+  formatDateView,
+} from "../../../../utils/formatDate";
 import "./WasteFormItem.scss";
+import { useLanguage } from "../../../../contexts";
 
 const wasteFormController = new Wasteform();
 const permissionController = new Permission();
@@ -21,12 +25,19 @@ export function WasteFormItem(props) {
   const [showModal, setShowModal] = useState(false);
   const [titleModal, setTitleModal] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
-  const { accessToken  , user: { role }, } = useAuth();
+  const {
+    accessToken,
+    user: { role },
+  } = useAuth();
 
   const onOpenCloseModal = () => setShowModal((prevState) => !prevState);
   const onOpenCloseConfirm = () => setShowConfirm((prevState) => !prevState);
 
   const [permissionsByRole, setPermissionsByRole] = useState([]);
+
+  const { translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
 
   useEffect(() => {
     (async () => {
@@ -48,7 +59,7 @@ export function WasteFormItem(props) {
   }, [role]);
 
   const openUpdateSite = () => {
-    setTitleModal(`Actualizar Formulario de Agua`);
+    setTitleModal(`${t("update")} ${t("waste_form")}`);
     onOpenCloseModal();
   };
 
@@ -65,16 +76,19 @@ export function WasteFormItem(props) {
 
   return (
     <>
-
-        <Table.Row key={wasteForm._id}>
+      <Table.Row key={wasteForm._id}>
         <Table.Cell>
           <Icon color={wasteForm.active ? "green" : "red"} name="circle" />
         </Table.Cell>
         <Table.Cell>{formatDateView(wasteForm.date)}</Table.Cell>
         <Table.Cell>
-          {wasteForm.creator_user? 
-          wasteForm.creator_user.lastname? wasteForm.creator_user.lastname + " " + wasteForm.creator_user.firstname
-          : wasteForm.creator_user.email : null}
+          {wasteForm.creator_user
+            ? wasteForm.creator_user.lastname
+              ? wasteForm.creator_user.lastname +
+                " " +
+                wasteForm.creator_user.firstname
+              : wasteForm.creator_user.email
+            : null}
         </Table.Cell>
         <Table.Cell>
           {isMaster(role) ||
@@ -98,7 +112,7 @@ export function WasteFormItem(props) {
           ) : null}
         </Table.Cell>
       </Table.Row>
-          {/* <Button icon as="a" href={siteForm.url} target="_blank">
+      {/* <Button icon as="a" href={siteForm.url} target="_blank">
             <Icon name="eye" />
           </Button>
           <Button icon primary onClick={openUpdateSite}>
@@ -108,7 +122,12 @@ export function WasteFormItem(props) {
             <Icon name="trash" />
           </Button> */}
 
-      <BasicModal show={showModal} close={onOpenCloseModal} title={titleModal} size={'fullscreen'}>
+      <BasicModal
+        show={showModal}
+        close={onOpenCloseModal}
+        title={titleModal}
+        size={"fullscreen"}
+      >
         <WasteForm
           onClose={onOpenCloseModal}
           onReload={onReload}
@@ -120,7 +139,9 @@ export function WasteFormItem(props) {
         open={showConfirm}
         onCancel={onOpenCloseConfirm}
         onConfirm={onDelete}
-        content={`Eliminar el formulario de agua con fecha ${formatDateView(wasteForm.date)}`}
+        content={`${t("delete_waste_form_with_date")} ${formatDateView(
+          wasteForm.date
+        )}`}
         size="mini"
       />
     </>

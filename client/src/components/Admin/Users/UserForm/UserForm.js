@@ -9,6 +9,7 @@ import { ENV } from "../../../../utils";
 import { isAdmin, isMaster } from "../../../../utils/checkPermission";
 import { initialValues, validationSchema } from "./UserForm.form";
 import "./UserForm.scss";
+import { useLanguage } from "../../../../contexts";
 
 const userController = new User();
 const roleController = new Role();
@@ -27,6 +28,10 @@ export function UserForm(props) {
   const [companyData, setCompanyData] = useState([]);
   const [siteData, setSiteData] = useState([]);
   const [error, setError] = useState("");
+
+    const { language, changeLanguage, translations } = useLanguage();
+  
+    const t = (key) => translations[key] || key; // Función para obtener la traducción
 
   useEffect(() => {
     roleController.getRoles(accessToken, true).then((response) => {
@@ -123,17 +128,15 @@ export function UserForm(props) {
       }
       <Form.Group widths="equal">
         <Form.Input
-          label="Nombre"
+          label={t("name")}
           name="firstname"
-          placeholder="Nombre"
           onChange={formik.handleChange}
           value={formik.values.firstname}
           error={formik.errors.firstname}
         />
         <Form.Input
-          label="Apellidos"
+          label={t("lastname")}
           name="lastname"
-          placeholder="Apellidos"
           onChange={formik.handleChange}
           value={formik.values.lastname}
           error={formik.errors.lastname}
@@ -144,8 +147,8 @@ export function UserForm(props) {
       <Form.Group widths="equal">
         {isMaster(role)? 
         <Form.Dropdown
-        label="Empresa"
-        placeholder="Seleccióna una empresa"
+        label={t("company")}
+        placeholder={t("select")}
         options={listCompanies.map((ds) => {
           return {
             key: ds._id,
@@ -162,7 +165,7 @@ export function UserForm(props) {
         isAdmin(role)? siteData.length===0?
         <>
         <Form.Input
-        label="Empresa"
+        label={t("company")}
         name="company"
         placeholder="Empresa"
         onChange={formik.handleChange}
@@ -170,8 +173,8 @@ export function UserForm(props) {
         error={formik.errors.company}
       />
        <Form.Dropdown
-        label="Sitio"
-        placeholder="Seleccióna un sitio"
+        label={t("site")}
+        placeholder={t("select")}
         options={listSites.map((ds) => {
           return {
             key: ds._id,
@@ -187,9 +190,9 @@ export function UserForm(props) {
         </>
          :
          <Form.Input
-         label="Sitio"
+         label={t("site")}
          name="site"
-         placeholder="Sitio"
+         placeholder={t("select")}
          onChange={formik.handleChange}
          value={siteData?siteData.name : ""}
          error={formik.errors.site}
@@ -200,7 +203,7 @@ export function UserForm(props) {
       </Form.Group>
       <Form.Group widths="equal">
         <Form.Input
-          label="Sector"
+          label={t("sector")}
           name="sector"
           placeholder="Sector"
           onChange={formik.handleChange}
@@ -208,7 +211,7 @@ export function UserForm(props) {
           error={formik.errors.sector}
         />
         <Form.Input
-          label="Posicion"
+          label={t("position")}
           name="position"
           placeholder="Posicion"
           onChange={formik.handleChange}
@@ -219,7 +222,7 @@ export function UserForm(props) {
 
       <Form.Group widths="equal">
         <Form.Input
-          label="Correo Electronico"
+          label={t("email")}
           name="email"
           placeholder="Correo electronico"
           onChange={formik.handleChange}
@@ -228,8 +231,8 @@ export function UserForm(props) {
         />
         {isMaster(role) || isAdmin(role) ? (
           <Form.Dropdown
-            label="Rol"
-            placeholder="Seleccióna un rol"
+            label={t("role")}
+            placeholder={t("select")}
             options={listRoles.map((ds) => {
               return {
                 key: ds._id,
@@ -246,7 +249,7 @@ export function UserForm(props) {
       </Form.Group>
 
       <Form.Input
-        label="Contraseña"
+        label={t("password")}
         type="password"
         name="password"
         placeholder="Contraseña"
@@ -256,7 +259,7 @@ export function UserForm(props) {
       />
 
       <Form.Button type="submit" primary fluid loading={formik.isSubmitting}>
-        {user ? "Actualizar datos" : "Crear usuario"}
+        {user ? t("update")  : t("create")}
       </Form.Button>
     </Form>
   );

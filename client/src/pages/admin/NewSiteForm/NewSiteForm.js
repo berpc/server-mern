@@ -12,6 +12,7 @@ import {
 import { ErrorAccessDenied } from "../Error";
 import { Permission } from "../../../api";
 import { Link } from "react-router-dom";
+import { useLanguage } from "../../../contexts";
 
 const permissionController = new Permission();
 
@@ -26,6 +27,10 @@ export function NewSiteForm() {
   const [permissionsByRole, setPermissionsByRole] = useState([]);
   const onOpenCloseModal = () => setShowModal((prevState) => !prevState);
   const onReload = () => setReload((prevState) => !prevState);
+
+  const { translations } = useLanguage();
+  
+  const t = (key) => translations[key] || key ; // Función para obtener la traducción
 
   useEffect(() => {
     (async () => {
@@ -55,7 +60,7 @@ export function NewSiteForm() {
       <>
         <div className="sites-page">
           <Header as="h3" attached="top">
-            {"Nuevo Formulario de Sitio"}
+          {t("new_site_form")}
           </Header>
           <Segment attached color='blue'>
             <SiteForm onReload={onReload} />

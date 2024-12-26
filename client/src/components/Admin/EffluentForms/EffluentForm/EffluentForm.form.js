@@ -17,7 +17,7 @@ export function initialValues(effluent, period, year) {
       reviews:[
       ],
       isApproved:false,
-      file:null
+      files:[]
     },
     total_industrial_effluents: effluent?.total_industrial_effluents || {
       code:effluentCodes["total_industrial_effluents"],
@@ -25,7 +25,7 @@ export function initialValues(effluent, period, year) {
       reviews:[
       ],
       isApproved:false,
-      file:null
+      files:[]
     },
     sludge_mud_sent_for_disposal_landfill:effluent?.sludge_mud_sent_for_disposal_landfill || {
       code:effluentCodes["sludge_mud_sent_for_disposal_landfill"],
@@ -33,7 +33,7 @@ export function initialValues(effluent, period, year) {
       reviews:[
       ],
       isApproved:false,
-      file:null
+      files:[]
     },
     total_effluents_per_unit_produced:effluent?.total_effluents_per_unit_produced || {
       code:effluentCodes["total_effluents_per_unit_produced"],
@@ -41,7 +41,7 @@ export function initialValues(effluent, period, year) {
       reviews:[
       ],
       isApproved:false,
-      file:null
+      files:[]
     },
     percentage_domestic_effluents:effluent?.percentage_domestic_effluents || {
       code:effluentCodes["percentage_domestic_effluents"],
@@ -49,7 +49,7 @@ export function initialValues(effluent, period, year) {
       reviews:[
       ],
       isApproved:false,
-      file:null
+      files:[]
     },
     percentage_industrial_effluents:effluent?.percentage_industrial_effluents || {
       code:effluentCodes["percentage_industrial_effluents"],
@@ -57,7 +57,7 @@ export function initialValues(effluent, period, year) {
       reviews:[
       ],
       isApproved:false,
-      file:null
+      files:[]
     }
   };
 }

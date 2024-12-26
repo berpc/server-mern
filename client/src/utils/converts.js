@@ -139,7 +139,7 @@ export function convertWaterFieldsEngToEsp(a) {
     case "rainwater_harvesting":
       return "Recolección de agua de lluvia";
     case "groundwater":
-      return "Agua de subterránea";
+      return "Agua subterránea";
     case "surface_water":
       return "Agua superficial";
     case "percentage_network_water":

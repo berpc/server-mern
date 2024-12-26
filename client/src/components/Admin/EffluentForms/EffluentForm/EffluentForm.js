@@ -18,6 +18,8 @@ import {
   Segment,
   Divider,
   Header,
+  List,
+  Message,
 } from "semantic-ui-react";
 import { useDropzone } from "react-dropzone";
 import { useFormik, Field, FieldArray, FormikProvider, getIn } from "formik";
@@ -34,23 +36,34 @@ import { useNavigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import { decrypt, encrypt } from "../../../../utils/cryptoUtils";
 import { PERIODS } from "../../../../utils";
-import { convertEffluentFieldsEngToEsp, convertPeriodsEngToEsp } from "../../../../utils/converts";
+import {
+  convertEffluentFieldsEngToEsp,
+  convertPeriodsEngToEsp,
+} from "../../../../utils/converts";
 import "./EffluentForm.scss";
+import { useLanguage } from "../../../../contexts";
 
 const effluentFormController = new Effluentform();
 
 export function EffluentForm(props) {
-  const { onClose, onReload, effluentForm, siteSelected , year, period} = props;
+  const { onClose, onReload, effluentForm, siteSelected, year, period } = props;
   const { accessToken } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [titleModal, setTitleModal] = useState("");
   const [fieldName, setFieldName] = useState("");
   const [listPeriods, setListPeriods] = useState([]);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  const [newFiles, setNewFiles] = useState([]);
+
   const { user } = useAuth();
 
   const location = useLocation();
   // const { siteSelected } = location.state || {};
+
+  const { translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
 
   if (!siteSelected) {
     // // Manejo de caso donde no hay datos en state (por ejemplo, acceso directo a la URL)
@@ -64,7 +77,7 @@ export function EffluentForm(props) {
 
   const openUpdateSite = (data, name) => {
     setFieldName(name);
-    setTitleModal(`Comentarios ${data}`);
+    setTitleModal(`${t("comments")}  ${data}`);
     onOpenCloseModal();
   };
 
@@ -82,7 +95,7 @@ export function EffluentForm(props) {
           } else {
             if (siteSelected) {
               formValue.site = siteSelected;
-            } 
+            }
             // else {
             //   // Desencriptar los datos recibidos
             //   if (!effluentForm) {
@@ -122,7 +135,7 @@ export function EffluentForm(props) {
       state: { siteSelected: siteSelected },
     });
   };
-  
+
   // Generar una lista de años (por ejemplo, del 2000 al 2024)
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 50 }, (_, i) => currentYear - i);
@@ -136,13 +149,13 @@ export function EffluentForm(props) {
             siteSelected,
             formik.values.year
           );
-          const periods = PERIODS.map((item) => item);
-          const availablePeriods = periods
-            .filter((period) => !response.periods.includes(period))
-            .map((period) => period);
-  
-          setListPeriods(availablePeriods);
-          console.log(availablePeriods)
+        const periods = PERIODS.map((item) => item);
+        const availablePeriods = periods
+          .filter((period) => !response.periods.includes(period))
+          .map((period) => period);
+
+        setListPeriods(availablePeriods);
+        console.log(availablePeriods);
       } catch (error) {
         console.error(error);
         setListPeriods([]);
@@ -150,14 +163,16 @@ export function EffluentForm(props) {
     })();
   }, [formik.values.year]);
 
-
   return (
     <Form className="effluent-form" onSubmit={formik.handleSubmit}>
       {effluentForm ? (
         <Segment>
-          <Header as="h4"> Fecha: {formatDateView(formik.values.date)}</Header>
           <Header as="h4">
-            Usuario creador:{" "}
+            {" "}
+            {t("date")}: {formatDateView(formik.values.date)}
+          </Header>
+          <Header as="h4">
+            {t("creator_user")}:{" "}
             {formik.values.creator_user
               ? formik.values.creator_user.lastname
                 ? formik.values.creator_user.lastname +
@@ -174,8 +189,8 @@ export function EffluentForm(props) {
             <GridRow>
               <GridColumn>
                 <Form.Dropdown
-                  label="Año"
-                  placeholder="Seleccione"
+                  label={t("year")}
+                  placeholder={t("select")}
                   options={years.map((year) => {
                     return {
                       key: year,
@@ -193,8 +208,8 @@ export function EffluentForm(props) {
               </GridColumn>
               <GridColumn>
                 <Form.Dropdown
-                  label="Periodo"
-                  placeholder="Seleccione"
+                  label={t("period")}
+                  placeholder={t("select")}
                   options={listPeriods.map((period) => {
                     return {
                       key: period,
@@ -217,12 +232,12 @@ export function EffluentForm(props) {
       <Table size="small" celled>
         <Table.Header>
           <Table.Row>
-            <Table.HeaderCell width="2">Codigo</Table.HeaderCell>
-            <Table.HeaderCell width="6">Concepto</Table.HeaderCell>
-            <Table.HeaderCell width="2">Valor</Table.HeaderCell>
-            <Table.HeaderCell width="2">Unidad</Table.HeaderCell>
-            <Table.HeaderCell width="2">Estado</Table.HeaderCell>
-            <Table.HeaderCell>Acciones</Table.HeaderCell>
+            <Table.HeaderCell width="1">{t("code")}</Table.HeaderCell>
+            <Table.HeaderCell width="6">{t("concept")}</Table.HeaderCell>
+            <Table.HeaderCell width="2">{t("value")}</Table.HeaderCell>
+            <Table.HeaderCell width="2">{t("unit")}</Table.HeaderCell>
+            <Table.HeaderCell width="2">{t("state")}</Table.HeaderCell>
+            <Table.HeaderCell>{t("actions")}</Table.HeaderCell>
           </Table.Row>
         </Table.Header>
         <Table.Body>
@@ -233,7 +248,10 @@ export function EffluentForm(props) {
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label"> {convertEffluentFieldsEngToEsp("total_domestic_effluents")}</label>
+              <label className="label">
+                {" "}
+                {convertEffluentFieldsEngToEsp("total_domestic_effluents")}
+              </label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -254,7 +272,7 @@ export function EffluentForm(props) {
             <Table.Cell>
               <Form.Dropdown
                 placeholder="m3"
-                options={[{key:1, value:true,name:""}].map((ds) => {
+                options={[{ key: 1, value: true, name: "" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -263,23 +281,26 @@ export function EffluentForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("total_domestic_effluents.unit", data.value)
+                  formik.setFieldValue(
+                    "total_domestic_effluents.unit",
+                    data.value
+                  )
                 }
                 value={formik.values.total_domestic_effluents.unit}
                 error={formik.errors.total_domestic_effluents}
               />
-              </Table.Cell>
+            </Table.Cell>
 
-              <Table.Cell>
+            <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -309,7 +330,14 @@ export function EffluentForm(props) {
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"total_domestic_effluents"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"total_domestic_effluents"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
@@ -320,7 +348,9 @@ export function EffluentForm(props) {
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">{convertEffluentFieldsEngToEsp("total_industrial_effluents")}</label>
+              <label className="label">
+                {convertEffluentFieldsEngToEsp("total_industrial_effluents")}
+              </label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -338,7 +368,7 @@ export function EffluentForm(props) {
             <Table.Cell>
               <Form.Dropdown
                 placeholder="m3"
-                options={[{key:1, value:true,name:""}].map((ds) => {
+                options={[{ key: 1, value: true, name: "" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -347,23 +377,26 @@ export function EffluentForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("total_industrial_effluents.isApproved", data.value)
+                  formik.setFieldValue(
+                    "total_industrial_effluents.isApproved",
+                    data.value
+                  )
                 }
                 value={formik.values.total_industrial_effluents.isApproved}
                 error={formik.errors.total_industrial_effluents}
               />
-              </Table.Cell>
-              
+            </Table.Cell>
+
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -393,7 +426,14 @@ export function EffluentForm(props) {
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"total_industrial_effluents"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"total_industrial_effluents"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
@@ -406,7 +446,9 @@ export function EffluentForm(props) {
 
             <Table.Cell>
               <label className="label">
-                {convertEffluentFieldsEngToEsp("sludge_mud_sent_for_disposal_landfill")}
+                {convertEffluentFieldsEngToEsp(
+                  "sludge_mud_sent_for_disposal_landfill"
+                )}
               </label>
             </Table.Cell>
             <Table.Cell>
@@ -427,7 +469,7 @@ export function EffluentForm(props) {
             <Table.Cell>
               <Form.Dropdown
                 placeholder="m3"
-                options={[{key:1, value:true,name:""}].map((ds) => {
+                options={[{ key: 1, value: true, name: "" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -436,22 +478,25 @@ export function EffluentForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("sludge_mud_sent_for_disposal_landfill.unit", data.value)
+                  formik.setFieldValue(
+                    "sludge_mud_sent_for_disposal_landfill.unit",
+                    data.value
+                  )
                 }
                 value={formik.values.sludge_mud_sent_for_disposal_landfill.unit}
                 error={formik.errors.sludge_mud_sent_for_disposal_landfill}
               />
-              </Table.Cell>
+            </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -476,14 +521,23 @@ export function EffluentForm(props) {
                 type="button"
                 onClick={() => {
                   openUpdateSite(
-                    convertEffluentFieldsEngToEsp("sludge_mud_sent_for_disposal_landfill"),
+                    convertEffluentFieldsEngToEsp(
+                      "sludge_mud_sent_for_disposal_landfill"
+                    ),
                     "sludge_mud_sent_for_disposal_landfill"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"sludge_mud_sent_for_disposal_landfill"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"sludge_mud_sent_for_disposal_landfill"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
@@ -495,7 +549,9 @@ export function EffluentForm(props) {
             </Table.Cell>
             <Table.Cell>
               <label className="label">
-              {convertEffluentFieldsEngToEsp("total_effluents_per_unit_produced")}
+                {convertEffluentFieldsEngToEsp(
+                  "total_effluents_per_unit_produced"
+                )}
               </label>
             </Table.Cell>
             <Table.Cell>
@@ -514,7 +570,7 @@ export function EffluentForm(props) {
             <Table.Cell>
               <Form.Dropdown
                 placeholder="m3/un"
-                options={[{key:1, value:true,name:""}].map((ds) => {
+                options={[{ key: 1, value: true, name: "" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -523,22 +579,25 @@ export function EffluentForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("total_effluents_per_unit_produced.unit", data.value)
+                  formik.setFieldValue(
+                    "total_effluents_per_unit_produced.unit",
+                    data.value
+                  )
                 }
                 value={formik.values.total_effluents_per_unit_produced.unit}
                 error={formik.errors.total_effluents_per_unit_produced}
               />
-              </Table.Cell>
+            </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -563,14 +622,23 @@ export function EffluentForm(props) {
                 type="button"
                 onClick={() => {
                   openUpdateSite(
-                    convertEffluentFieldsEngToEsp("total_effluents_per_unit_produced"),
+                    convertEffluentFieldsEngToEsp(
+                      "total_effluents_per_unit_produced"
+                    ),
                     "total_effluents_per_unit_produced"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"total_effluents_per_unit_produced"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"total_effluents_per_unit_produced"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
@@ -581,7 +649,9 @@ export function EffluentForm(props) {
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">{convertEffluentFieldsEngToEsp("percentage_domestic_effluents")}</label>
+              <label className="label">
+                {convertEffluentFieldsEngToEsp("percentage_domestic_effluents")}
+              </label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -599,7 +669,7 @@ export function EffluentForm(props) {
             <Table.Cell>
               <Form.Dropdown
                 placeholder="%"
-                options={[{key:1, value:true,name:""}].map((ds) => {
+                options={[{ key: 1, value: true, name: "" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -608,23 +678,26 @@ export function EffluentForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("percentage_domestic_effluents.unit", data.value)
+                  formik.setFieldValue(
+                    "percentage_domestic_effluents.unit",
+                    data.value
+                  )
                 }
                 value={formik.values.percentage_domestic_effluents.unit}
                 error={formik.errors.percentage_domestic_effluents}
               />
-              </Table.Cell>
+            </Table.Cell>
 
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -647,14 +720,23 @@ export function EffluentForm(props) {
                 type="button"
                 onClick={() => {
                   openUpdateSite(
-                    convertEffluentFieldsEngToEsp("percentage_domestic_effluents"),
+                    convertEffluentFieldsEngToEsp(
+                      "percentage_domestic_effluents"
+                    ),
                     "percentage_domestic_effluents"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"percentage_domestic_effluents"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"percentage_domestic_effluents"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
 
@@ -665,7 +747,11 @@ export function EffluentForm(props) {
               </label>
             </Table.Cell>
             <Table.Cell>
-              <label className="label">{convertEffluentFieldsEngToEsp("percentage_industrial_effluents")}</label>
+              <label className="label">
+                {convertEffluentFieldsEngToEsp(
+                  "percentage_industrial_effluents"
+                )}
+              </label>
             </Table.Cell>
             <Table.Cell>
               <Form.Input
@@ -683,7 +769,7 @@ export function EffluentForm(props) {
             <Table.Cell>
               <Form.Dropdown
                 placeholder="%"
-                options={[{key:1, value:true,name:""}].map((ds) => {
+                options={[{ key: 1, value: true, name: "" }].map((ds) => {
                   return {
                     key: ds.key,
                     text: ds.name,
@@ -692,22 +778,25 @@ export function EffluentForm(props) {
                 })}
                 selection
                 onChange={(_, data) =>
-                  formik.setFieldValue("percentage_industrial_effluents.unit", data.value)
+                  formik.setFieldValue(
+                    "percentage_industrial_effluents.unit",
+                    data.value
+                  )
                 }
                 value={formik.values.percentage_industrial_effluents.unit}
                 error={formik.errors.percentage_industrial_effluents}
               />
-              </Table.Cell>
+            </Table.Cell>
             <Table.Cell>
               <Form.Dropdown
-                placeholder="Seleccione"
+                placeholder={t("select")}
                 options={[
-                  { key: 1, value: true, name: "Aprobado" },
-                  { key: 2, value: false, name: "No aprobado" },
+                  { key: 1, value: true, name: "aproveed" },
+                  { key: 2, value: false, name: "not_aproveed" },
                 ].map((ds) => {
                   return {
                     key: ds.key,
-                    text: ds.name,
+                    text: t(ds.name),
                     value: ds.value,
                   };
                 })}
@@ -730,14 +819,23 @@ export function EffluentForm(props) {
                 type="button"
                 onClick={() => {
                   openUpdateSite(
-                    convertEffluentFieldsEngToEsp("percentage_industrial_effluents"),
+                    convertEffluentFieldsEngToEsp(
+                      "percentage_industrial_effluents"
+                    ),
                     "percentage_industrial_effluents"
                   );
                 }}
               >
                 <Icon name="comment outline" />
               </Button>
-              <FileUpload accessToken={accessToken} data={formik} field={"percentage_industrial_effluents"}/>
+              <FileUpload
+                accessToken={accessToken}
+                data={formik}
+                field={"percentage_industrial_effluents"}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+                t={t}
+              />
             </Table.Cell>
           </Table.Row>
         </Table.Body>
@@ -766,11 +864,12 @@ export function EffluentForm(props) {
           onReload={onReload}
           effluentForm={effluentForm}
           user={user}
+          t={t}
         />
       </BasicModal>
       <Form.Group widths="2">
         <Form.Button type="submit" fluid primary loading={formik.isSubmitting}>
-          {!effluentForm ? "Guardar" : "Actualizar datos"}
+          {!effluentForm ? t("save") : t("update")}
         </Form.Button>
         <Form.Button
           type="button"
@@ -781,7 +880,7 @@ export function EffluentForm(props) {
             onClose ? onClose() : goBack();
           }}
         >
-          {"Cancelar"}
+          {t("cancel")}
         </Form.Button>
       </Form.Group>
     </Form>
@@ -789,7 +888,7 @@ export function EffluentForm(props) {
 }
 
 function Comments(props) {
-  const { formik, user, fieldName, onClose } = props;
+  const { formik, user, fieldName, onClose, t } = props;
   const [comment, setComment] = useState("");
   console.log(user);
 
@@ -841,6 +940,7 @@ function Comments(props) {
                         : false
                       : false
                   }
+                  t={t}
                 />
                 <Divider fitted />
               </>
@@ -859,7 +959,7 @@ function Comments(props) {
         <Form.Button
           type="button"
           icon="edit"
-          content={"Añadir comentario"}
+          content={t("add_comment")}
           primary
           fluid
           onClick={onChangeHandle}
@@ -869,7 +969,7 @@ function Comments(props) {
   );
 }
 
-const EditableComment = ({ id, author, date, content, onSave, active }) => {
+const EditableComment = ({ id, author, date, content, onSave, active, t }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(content);
 
@@ -903,8 +1003,8 @@ const EditableComment = ({ id, author, date, content, onSave, active }) => {
           {isEditing ? (
             <Form reply>
               <Form.TextArea value={editedContent} onChange={handleChange} />
-              <Button content="Guardar" onClick={handleSave} primary />
-              <Button content="Cancelar" onClick={handleCancel} secondary />
+              <Button content={t("save")} onClick={handleSave} primary />
+              <Button content={t("cancel")} onClick={handleCancel} secondary />
             </Form>
           ) : (
             <div>{editedContent}</div>
@@ -912,7 +1012,7 @@ const EditableComment = ({ id, author, date, content, onSave, active }) => {
         </Comment.Text>
         {active ? (
           <Comment.Actions>
-            <Comment.Action onClick={handleEdit}>Editar</Comment.Action>
+            <Comment.Action onClick={handleEdit}>{t("edit")}</Comment.Action>
           </Comment.Actions>
         ) : null}
       </Comment.Content>
@@ -920,93 +1020,9 @@ const EditableComment = ({ id, author, date, content, onSave, active }) => {
   );
 };
 
-function FileUpload (props) {
-  const {accessToken, data, field}=props;
-  const [file, setFile] = useState(null);
-  const [fileName, setFileName] = useState(null);
-  const [message, setMessage] = useState('');
-
-  const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf',  
-    //'application/vnd.ms-excel', // .xls
-    //'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' // .xlsx
-    ];
-
-  useEffect(() => {
-    if (data.values[field] && data.values[field].file!==null) {
-     setFileName(data.values[field].file);
-    }
-  }, [field]);
-
-   const handleFileChange = async (event) => {
-    const file = event.target.files[0];
-    
-    if (file) {
-      if (!allowedTypes.includes(file.type)) {
-        console.log('Tipo de archivo no permitido. Debe ser JPG, PNG o PDF.');
-      } else {
-      setMessage(`Archivo seleccionado: ${file.name}`);
-
-      const formData = new FormData();
-      formData.append('file', file);
-
-      try {
-        const response = await effluentFormController.uploadFileApi(accessToken,formData);
-        setMessage(response.msg);
-        if(response.status && response.status===200){
-          setFile(file);
-          setFileName(file.name);
-          data.setFieldValue(`${field}.file`, file.name)
-        }
-      } catch (error) {
-        setMessage('Error al subir el archivo');
-      }
-    }
-    }
-  };
-
-  const handleButtonClick = (event) => {
-    event.preventDefault(); // Evita que el formulario se envíe
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.onchange = handleFileChange;
-    input.click();
-  };
-
-  const handleRemoveFile = async () => {
-    setFile(null); // Elimina el archivo
-    setFileName(null);
-    try {
-      const response = await effluentFormController.deleteFileApi(accessToken,fileName);
-      setMessage(response.message);
-      removeFile();
-    } catch (error) {
-      setMessage('Error al elimianr el archivo');
-    }
-  };
-
-  const removeFile = async () => {
-    data.setFieldValue(`${field}.file`, null)
-  };
-
-  return (
-    <>
-     
-      {fileName? (
-        <>
-          {/* <p>{file.name}</p> */}
-          <FileViewer fileName={fileName} handleRemove={handleRemoveFile}/>
-        </>
-      ):  <Button icon onClick={handleButtonClick}>
-                   <Icon name="paperclip" />
-    </Button>}
-    </>
-  );
-
-};
-
-function FileViewer (props){
-  const {fileName, handleRemove}=props;
-  const [fileUrl, setFileUrl] = useState('');
+function FileViewer(props) {
+  const { fileName, fileUniqueName, handleRemove, t } = props;
+  const [fileUrl, setFileUrl] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
 
   useEffect(() => {
@@ -1014,19 +1030,21 @@ function FileViewer (props){
       setFileUrl(fileName); // Construye la URL del archivo
       (async () => {
         try {
-          const response = await effluentFormController.getFileApi(fileName);
+          const response = await effluentFormController.getFileApi(
+            fileUniqueName
+          );
           setFileUrl(response); // Construye la URL del archivo
+          console.log(setFileUrl);
           //setMessage(response.message);
         } catch (error) {
           //setMessage('Error al elimianr el archivo');
         }
-          })();
-    
+      })();
     }
   }, [fileName]);
 
   const handleOpenPreview = (event) => {
-    event.preventDefault(); 
+    event.preventDefault();
     setPreviewOpen(true);
   };
 
@@ -1037,32 +1055,189 @@ function FileViewer (props){
 
   return (
     <>
+      <List.Content floated="left">{fileName}</List.Content>
+      <List.Content floated="right">
+        {" "}
+        <Button
+          color="red"
+          onClick={() => handleRemove(fileUniqueName)}
+          icon="trash alternate"
+        />
+      </List.Content>
       {/* //<Button onClick={handleOpenPreview}> {fileName}</Button> */}
-       
-    <Modal
-      onClose={ handleClosePreview}
-      onOpen={handleOpenPreview}
-      open={previewOpen}
-      trigger={<Button primary icon><Icon name="file alternate"/></Button>}
-    >
-      <ModalHeader>{fileName}</ModalHeader>
-      <ModalContent>
-        {fileName && (fileName.endsWith('.jpg') || fileName.endsWith('.png') || fileName.endsWith('.jpeg'))  && (
-            <Image src={fileUrl} alt="Vista previa" style={{ maxWidth: '100%' }} />
-          )}
-          {fileName && fileName.endsWith('.pdf') && (
-            <iframe src={fileUrl} title="Vista previa" style={{ width: '100%', height: '500px' }} />
-          )}
-      </ModalContent>
-      <ModalActions>
-      <Button color="red" onClick={handleRemove}>
-          <Icon disabled name='trash alternate' /> Eliminar
-          </Button>
-        <Button color='black' onClick={handleClosePreview}>
-        <Icon disabled name='close' />Cerrar
-        </Button>
-      </ModalActions>
-    </Modal>
+      <List.Content floated="right">
+        <Modal
+          onClose={handleClosePreview}
+          onOpen={handleOpenPreview}
+          open={previewOpen}
+          trigger={
+            <Button primary icon>
+              <Icon name="eye" />
+            </Button>
+          }
+        >
+          <ModalHeader>{fileName}</ModalHeader>
+          <ModalContent>
+            {fileName &&
+              (fileName.endsWith(".jpg") ||
+                fileName.endsWith(".png") ||
+                fileName.endsWith(".jpeg")) && (
+                <Image
+                  src={fileUrl}
+                  alt="Vista previa"
+                  style={{ maxWidth: "100%" }}
+                />
+              )}
+            {fileName && fileName.endsWith(".pdf") && (
+              <iframe
+                src={fileUrl}
+                title={t("preview")}
+                style={{ width: "100%", height: "500px" }}
+              />
+            )}
+          </ModalContent>
+          <ModalActions>
+            {/* <Button color="red" onClick={() => handleRemove(fileName)}>
+            <Icon disabled name="trash alternate" /> Eliminar
+          </Button> */}
+            <Button color="black" onClick={handleClosePreview}>
+              <Icon disabled name="close" />
+              {t("close")}
+            </Button>
+          </ModalActions>
+        </Modal>
+      </List.Content>
     </>
   );
-};
+}
+
+function FileUpload(props) {
+  const { accessToken, data, field, newFiles, setNewFiles, t } = props;
+  const [files, setFiles] = useState([]);
+  const [filesView, setFilesView] = useState([]);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [openModal, setOpenModal] = useState(false); // Para controlar el estado del modal
+
+  useEffect(() => {
+    if (data.values[field].files) {
+      setFilesView(data.values[field].files); // Construye la URL del archivo
+    }
+  }, [data]);
+
+  const handleButtonClick = (event) => {
+    event.preventDefault(); // Evita que el formulario se envíe
+    const input = document.createElement("input");
+    input.type = "file";
+    input.multiple = true;
+    input.onchange = handleFileChange;
+    input.click();
+  };
+
+  // Maneja el cambio cuando se seleccionan archivos
+  const handleFileChange = async (e) => {
+    e.preventDefault(); // Evita que el formulario se envíe
+    const selectedFiles = e.target.files;
+    setNewFiles({ ...newFiles, [field]: Array.from(selectedFiles) });
+    //data.setFieldValue(`${field}.files`,Array.from(selectedFiles))
+    setFiles([...selectedFiles]);
+  };
+
+  // Función para cerrar el modal
+  const closeModal = (event) => {
+    event.preventDefault();
+    setOpenModal(!openModal);
+  };
+
+  const handleRemoveFile = async (file) => {
+    try {
+      const updatedFiles = filesView.filter((f) => f.uniqueName !== file);
+      setFilesView(updatedFiles);
+      const response = await effluentFormController.deleteFileApi(
+        accessToken,
+        file
+      );
+      //setMessage(response.message);
+      removeFile(updatedFiles);
+    } catch (error) {
+      // setMessage('Error al elimianr el archivo');
+    }
+  };
+
+  const removeFile = async (updatedFiles) => {
+    data.setFieldValue(`${field}.files`, updatedFiles);
+  };
+
+  return (
+    <>
+      {/* Input para seleccionar los archivos */}
+      {/* <Input
+        type="file"
+        multiple
+        icon={"paperclip"}
+        onChange={handleFileUpload}
+      /> */}
+
+      <Button
+        default
+        onClick={handleButtonClick}
+        icon="paperclip"
+        style={{ marginTop: "10px" }}
+        color={files.length > 0 ? "green" : "grey"}
+      ></Button>
+
+      {/* Mensajes de éxito o error */}
+      {successMessage && (
+        <Message success>
+          <Message.Header>Éxito</Message.Header>
+          <p>{successMessage}</p>
+        </Message>
+      )}
+
+      {errorMessage && (
+        <Message error>
+          <Message.Header>Error</Message.Header>
+          <p>{errorMessage}</p>
+        </Message>
+      )}
+
+      <Button
+        primary
+        onClick={closeModal}
+        style={{ marginTop: "10px" }}
+        icon="eye"
+      ></Button>
+      {/* Modal para mostrar los archivos subidos */}
+      <Modal open={openModal} onClose={closeModal} size="tiny">
+        <Modal.Header>Archivos subidos</Modal.Header>
+        <Modal.Content>
+          {filesView.length > 0 ? (
+            <List divided>
+              {filesView.map((filePath, index) => (
+                <List.Item key={index}>
+                  {/* <a href={`/${filePath.url}`} target="_blank" rel="noopener noreferrer">
+                      {filePath.url}
+                    </a> */}
+
+                  <FileViewer
+                    fileName={filePath.name}
+                    fileUniqueName={filePath.uniqueName}
+                    handleRemove={handleRemoveFile}
+                    t={t}
+                  />
+                </List.Item>
+              ))}
+            </List>
+          ) : (
+            <p>No se encontraron archivos subidos.</p>
+          )}
+        </Modal.Content>
+        <Modal.Actions>
+          <Button color="green" onClick={closeModal}>
+            {t("close")}
+          </Button>
+        </Modal.Actions>
+      </Modal>
+    </>
+  );
+}

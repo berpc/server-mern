@@ -5,6 +5,7 @@ import { Menu } from "../../../../api";
 import { useAuth } from "../../../../hooks";
 import { MenuForm } from "../MenuForm";
 import "./MenuItem.scss";
+import { useLanguage } from "../../../../contexts";
 
 const menuController = new Menu();
 
@@ -22,8 +23,12 @@ export function MenuItem(props) {
   const onOpenCloseModal = () => setShowModal((prevState) => !prevState);
   const onOpenCloseConfirm = () => setShowConfirm((prevState) => !prevState);
 
+  const { translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
+
   const openUpdateMenu = () => {
-    setTitleModal(`Actualizar menu: ${menu.title}`);
+    setTitleModal(`${t("update")} menu: ${menu.title}`);
     onOpenCloseModal();
   };
 
@@ -31,8 +36,8 @@ export function MenuItem(props) {
     setIsDelete(false);
     setConfirmMessage(
       menu.active
-        ? `Desactivar el menu ${menu.title}`
-        : `Activar el menu ${menu.title}`
+        ? `${t("inactive_menu")} ${menu.title}`
+        : `${t("active_menu")} ${menu.title}`
     );
     onOpenCloseConfirm();
   };
@@ -51,7 +56,7 @@ export function MenuItem(props) {
 
   const openDeleteConfirm = () => {
     setIsDelete(true);
-    setConfirmMessage(`Eliminar el menu ${menu.title}`);
+    setConfirmMessage(`${t("delete_menu")} ${menu.title}`);
     onOpenCloseConfirm();
   };
 

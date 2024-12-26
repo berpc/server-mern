@@ -23,6 +23,7 @@ import {
   isMaster,
 } from "../../../../utils/checkPermission";
 import { ErrorAccessDenied } from "../../../../pages/admin/Error";
+import { useLanguage } from "../../../../contexts";
 const _ = require("lodash");
 
 const userController = new User();
@@ -39,6 +40,10 @@ export function ListUsers(props) {
   } = useAuth();
 
   const [permissionByRole, setPermissionsByRole] = useState([]);
+
+  const { translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
 
   //   const [
   //     filterText,
@@ -70,7 +75,7 @@ export function ListUsers(props) {
       try {
         setUsers(null);
         setUsersFilter([]);
-        if(company && !site ){
+        if (company && !site) {
           const response = await userController.getUsersByCompany(
             accessToken,
             company._id,
@@ -79,7 +84,7 @@ export function ListUsers(props) {
           let result = response.map((s) => ({ ...s, key: s._id }));
           setUsers(result);
           setUsersFilter(result);
-        }else if(site && company){
+        } else if (site && company) {
           const response = await userController.getUsersBySite(
             accessToken,
             site._id,
@@ -88,8 +93,8 @@ export function ListUsers(props) {
           let result = response.map((s) => ({ ...s, key: s._id }));
           setUsers(result);
           setUsersFilter(result);
-        }else{
-          if(isMaster(role)){
+        } else {
+          if (isMaster(role)) {
             const response = await userController.getUsers(
               accessToken,
               usersActive
@@ -99,7 +104,6 @@ export function ListUsers(props) {
             setUsersFilter(result);
           }
         }
-       
       } catch (error) {
         console.error(error);
       }
@@ -107,7 +111,7 @@ export function ListUsers(props) {
   }, [usersActive, reload, accessToken]);
 
   if (!users) return <Loader active inline="centered" />;
-  if (size(users) === 0) return "No hay ningun usuario";
+  if (size(users) === 0) return t("there_is_no_user");
 
   return (
     <div>
@@ -120,6 +124,7 @@ export function ListUsers(props) {
               dataOrigin={users}
               data={usersFilter}
               setData={setUsersFilter}
+              t={t}
             />
           </div>
           <Divider clearing />
@@ -127,11 +132,11 @@ export function ListUsers(props) {
           <Table celled>
             <Table.Header>
               <Table.Row>
-                <Table.HeaderCell>Nombre</Table.HeaderCell>
-                <Table.HeaderCell>Apellido</Table.HeaderCell>
-                <Table.HeaderCell>Email</Table.HeaderCell>
-                <Table.HeaderCell>Rol</Table.HeaderCell>
-                <Table.HeaderCell>Acciones</Table.HeaderCell>
+                <Table.HeaderCell>{t("name")}</Table.HeaderCell>
+                <Table.HeaderCell>{t("lastname")}</Table.HeaderCell>
+                <Table.HeaderCell>{t("email")}</Table.HeaderCell>
+                <Table.HeaderCell>{t("role")}</Table.HeaderCell>
+                <Table.HeaderCell>{t("actions")}</Table.HeaderCell>
               </Table.Row>
             </Table.Header>
             <Table.Body>
@@ -149,7 +154,7 @@ export function ListUsers(props) {
 }
 
 function SearchStandardUser(props) {
-  const { dataOrigin, data, setData } = props;
+  const { dataOrigin, data, setData, t } = props;
   const [state, setState] = useState({
     isLoading: false,
     results: [],
@@ -177,8 +182,8 @@ function SearchStandardUser(props) {
         setState({ isLoading: false, results: [], value: "" });
         return true;
       }
-      const filteredData = dataOrigin.filter(item =>
-        Object.values(item).some(v =>
+      const filteredData = dataOrigin.filter((item) =>
+        Object.values(item).some((v) =>
           v.toString().toLowerCase().includes(value.toLowerCase())
         )
       );
@@ -216,7 +221,7 @@ function SearchStandardUser(props) {
         <Input
           icon="search"
           iconPosition="left"
-          placeholder="Buscar..."
+          placeholder={t("search")}
           onChange={_.debounce(handleSearchChange, 500, {
             leading: true,
           })}

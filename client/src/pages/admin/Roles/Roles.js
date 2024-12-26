@@ -5,8 +5,13 @@ import { RoleForm, ListRoles } from "../../../components/Admin/Roles";
 import "./Roles.scss";
 import { useAuth } from "../../../hooks";
 import { Permission } from "../../../api";
-import { isAdmin, hasPermission, isMaster } from "../../../utils/checkPermission";
+import {
+  isAdmin,
+  hasPermission,
+  isMaster,
+} from "../../../utils/checkPermission";
 import { ErrorAccessDenied } from "../Error";
+import { useLanguage } from "../../../contexts";
 
 const permissionController = new Permission();
 
@@ -23,6 +28,10 @@ export function Roles() {
 
   const onOpenCloseModal = () => setShowModal((prevState) => !prevState);
   const onReload = () => setReload((prevState) => !prevState);
+
+  const { translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
 
   useEffect(() => {
     (async () => {
@@ -45,7 +54,7 @@ export function Roles() {
 
   const panes = [
     {
-      menuItem: "Roles activos",
+      menuItem: t("active_roles"),
       render: () => (
         <Tab.Pane attached={false}>
           <ListRoles rolesActive={true} reload={reload} onReload={onReload} />
@@ -53,7 +62,7 @@ export function Roles() {
       ),
     },
     {
-      menuItem: "Roles inactivos",
+      menuItem: t("inactive_roles"),
       render: () => (
         <Tab.Pane attached={false}>
           <ListRoles rolesActive={false} reload={reload} onReload={onReload} />
@@ -70,14 +79,15 @@ export function Roles() {
     return (
       <>
         <div className="roles-page">
-          {isMaster(role) || isAdmin(role) ||
+          {isMaster(role) ||
+          isAdmin(role) ||
           hasPermission(permissionsByRole, role._id, "roles", "create") ? (
             <Button
               className="roles-page__add"
               primary
               onClick={onOpenCloseModal}
             >
-              <Icon name='plus' />  Nuevo rol
+              <Icon name="plus" /> {t("new_role")}
             </Button>
           ) : null}
           <Tab menu={{ secondary: true }} panes={panes} />
@@ -86,7 +96,7 @@ export function Roles() {
         <BasicModal
           show={showModal}
           close={onOpenCloseModal}
-          title="Crear nuevo rol"
+          title={t("create_new_role")}
         >
           <RoleForm close={onOpenCloseModal} onReload={onReload} />
         </BasicModal>

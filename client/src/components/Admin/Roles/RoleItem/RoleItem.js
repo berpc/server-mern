@@ -5,6 +5,7 @@ import { useAuth } from "../../../../hooks";
 import { BasicModal } from "../../../Shared";
 import { RoleForm } from "../RoleForm";
 import "./RoleItem.scss";
+import { useLanguage } from "../../../../contexts";
 
 const roleController = new Role();
 
@@ -22,8 +23,12 @@ export function RoleItem(props) {
   const onOpenCloseModal = () => setShowModal((prevState) => !prevState);
   const onOpenCloseConfirm = () => setShowConfirm((prevState) => !prevState);
 
+  const { translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
+
   const openUpdateUser = () => {
-    setTitleModal(`Actualizar ${role.name}`);
+    setTitleModal(`${t("update")} ${role.name}`);
     onOpenCloseModal();
   };
 
@@ -31,8 +36,8 @@ export function RoleItem(props) {
     setIsDelete(false);
     setConfirmMessage(
       role.active
-        ? `Desactivar rol ${role.name}`
-        : `Activar rol ${role.name}`
+        ? `${t("inactive_role")} ${role.name}`
+        : `${t("active_role")}${role.name}`
     );
     onOpenCloseConfirm();
   };
@@ -51,7 +56,7 @@ export function RoleItem(props) {
 
   const openDeleteConfirm = () => {
     setIsDelete(true);
-    setConfirmMessage(`Eliminar el rol ${role.name}`);
+    setConfirmMessage(`${t("delete_role")} ${role.name}`);
     onOpenCloseConfirm();
   };
 
@@ -69,9 +74,7 @@ export function RoleItem(props) {
     <>
       <div className="role-item">
         <div className="role-item__info">
-          <div>
-              {role.name}        
-          </div>
+          <div>{role.name}</div>
         </div>
         <div>
           <Button icon primary onClick={openUpdateUser}>

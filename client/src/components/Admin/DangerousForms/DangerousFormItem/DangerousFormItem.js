@@ -12,6 +12,7 @@ import {
 } from "../../../../utils/checkPermission";
 import "./DangerousFormItem.scss";
 import { formatDateHourCompleted, formatDateView } from "../../../../utils/formatDate";
+import { useLanguage } from "../../../../contexts";
 
 const dangerousFormController = new Dangerousform();
 const permissionController = new Permission();
@@ -27,6 +28,10 @@ export function DangerousFormItem(props) {
   const onOpenCloseConfirm = () => setShowConfirm((prevState) => !prevState);
 
   const [permissionsByRole, setPermissionsByRole] = useState([]);
+
+  const { translations } = useLanguage();
+
+  const t = (key) => translations[key] || key; // Función para obtener la traducción
 
   useEffect(() => {
     (async () => {
@@ -48,7 +53,7 @@ export function DangerousFormItem(props) {
   }, [role]);
 
   const openUpdateSite = () => {
-    setTitleModal(`Actualizar Formulario de Efluentes`);
+    setTitleModal(`${t("update")} ${t("effluent_form")}`);
     onOpenCloseModal();
   };
 
@@ -120,10 +125,11 @@ export function DangerousFormItem(props) {
         open={showConfirm}
         onCancel={onOpenCloseConfirm}
         onConfirm={onDelete}
-        content={`Eliminar el formulario de peligrosos con fecha ${formatDateView(dangerousForm.date)}`}
+        header={t("delete")}
+        content={`${t("delete_dangerous_form_with_date")} ${formatDateView(dangerousForm.date)}`}
         size="tiny"
-        cancelButton='Cancelar'
-        confirmButton="Aceptar"
+        cancelButton={t("cancel")}
+        confirmButton={t("accept")}
       />
     </>
   );

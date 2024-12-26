@@ -2,12 +2,12 @@ const express = require("express");
 const multiparty = require("connect-multiparty");
 const ProductionController = require("../controllers/production");
 const md_auth = require("../middlewares/authenticated");
-const md_upload= multiparty({ uploadDir: "./uploads/files" }); 
+const md_upload= multiparty({ uploadDir: "./uploads/files/production" }); 
 const fs = require("fs");
 const path = require("path");
 
-if (!fs.existsSync("./uploads/files")) {
-    fs.mkdirSync("./uploads/files", { recursive: true });
+if (!fs.existsSync("./uploads/files/production")) {
+    fs.mkdirSync("./uploads/files/production", { recursive: true });
   }
 
 const api = express.Router();

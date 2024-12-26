@@ -1,13 +1,13 @@
 const express = require("express");
 const multiparty = require("connect-multiparty");
 const WaterController = require("../controllers/water");
-const md_upload= multiparty({ uploadDir: "./uploads/files" }); 
+const md_upload= multiparty({ uploadDir: "./uploads/files/water" }); 
 const md_auth = require("../middlewares/authenticated");
 const fs = require("fs");
 const path = require("path");
 
-if (!fs.existsSync("./uploads/files")) {
-    fs.mkdirSync("./uploads/files", { recursive: true });
+if (!fs.existsSync("./uploads/files/water")) {
+    fs.mkdirSync("./uploads/files/water", { recursive: true });
   }
 
 const api = express.Router();
