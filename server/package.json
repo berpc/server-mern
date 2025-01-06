@@ -5,7 +5,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "nodemon main",
+    "start": "serve dist -s -n -L -p $PORT",
     "dev": "nodemon main"
     
     
