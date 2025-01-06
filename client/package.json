@@ -29,10 +29,11 @@
     "web-vitals": "^2.1.4",
     "xlsx": "^0.18.5",
     "yarn": "^1.22.22",
-    "yup": "^1.4.0"
+    "yup": "^1.4.0",
+    "serve": "^14.2.4"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "serve dist -s -n -L -p $PORT",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
