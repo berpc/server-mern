@@ -1,8 +1,8 @@
 const mongoose = require("mongoose");
 const API_VERSION = "v1";
-const IP_SERVER = "localhost";
-const PORT_DB = 27017;
-const NAME_DB = "web-db";
+const IP_SERVER = process.env.IP_SERVER|| "localhost";
+const PORT_DB = process.env.PORT_DB || 27017;
+const NAME_DB = process.env.NAME_DB|| "web-db";
 
 function connectDB (module){
     var connection = mongoose.createConnection(
